@@ -137,7 +137,7 @@ final class KeyboardStripView: UIView {
             withConfiguration: UIImage.SymbolConfiguration(pointSize: 12.5, weight: .medium)
         )
         chip.imagePadding = 6
-        chip.title = String(localized: "Undo dictation")
+        chip.title = String(localized: "Desfazer")
         chip.contentInsets = NSDirectionalEdgeInsets(top: 0, leading: 13, bottom: 0, trailing: 13)
         chip.background.cornerRadius = 15
         undoChip.configuration = chip
@@ -1162,8 +1162,9 @@ nonisolated extension KeyboardMetrics {
     /// equal cells (iPhone 17 Pro Max, iOS 27.2.1, a TestFlight tester's screenshot; the simulator
     /// shows no icon). Hex's key takes that cell at its own end of the bar.
     static let appleIconCellWidth: CGFloat = 59
-    /// Hex's key in Apple's bar keeps the 44 × 28 pt mark it had in the 38 pt strip.
-    static let barHexKeyHeight: CGFloat = 28
+    /// Fala: Hex's key in Apple's bar is the Function keyboard's 36 pt disc (Hex drew a 44 × 28 pt
+    /// mark). Centred on the words' line, 25 pt down, it spans 7 to 43 pt of the 44 pt bar.
+    static let barHexKeyHeight: CGFloat = 36
     /// Apple's bar was measured on iOS 26 and 27 (`KeyboardLanguage.systemMajorVersion`); iOS 18
     /// is unmeasured (no simulator runtime) and keeps the 38 pt strip it always had.
     static var appleBarIsMeasured: Bool { KeyboardLanguage.systemMajorVersion >= 26 }

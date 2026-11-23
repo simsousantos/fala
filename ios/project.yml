@@ -120,6 +120,10 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         PRODUCT_BUNDLE_IDENTIFIER: com.simsousantos.fala.mobile.keyboard
         PRODUCT_NAME: HEXKeyboard
+        # Fala: the ⚡ menu's Reescrever and Formalizar run Apple Intelligence in the keyboard,
+        # weakly linked as in the app so iOS 18 still launches it.
+        OTHER_LDFLAGS: $(inherited) -weak_framework FoundationModels
+        OTHER_SWIFT_FLAGS: $(inherited) -Xfrontend -disable-autolink-framework -Xfrontend FoundationModels
         SKIP_INSTALL: YES
   HEXWidgets:
     type: app-extension

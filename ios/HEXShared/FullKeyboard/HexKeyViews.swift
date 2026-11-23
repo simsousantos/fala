@@ -19,6 +19,9 @@ final class HexKeyControl: UIControl {
     /// In the strip, the suggestions' line in this view's coordinates
     /// (`KeyboardMetrics.stripTextCenter`): the mark centres on it, beside the words.
     var markCenterY: CGFloat? { didSet { if markCenterY != oldValue { setNeedsDisplay() } } }
+    /// Fala: in Apple's bar the key is drawn as the Function keyboard's disc, a filled circle
+    /// with the waveform symbol, instead of Hex's bare mark.
+    var drawsDisc = false { didSet { if drawsDisc != oldValue { setNeedsDisplay() } } }
 
     /// The finger landed on the key, with when (wall clock, from the touch's own timestamp).
     var onPress: ((TimeInterval) -> Void)?
@@ -140,6 +143,10 @@ final class HexKeyControl: UIControl {
         // there (19 pt, or less where the line leaves less room), and so does its pressed chip.
         let markMidY = inStrip ? (markCenterY ?? cap.midY) : cap.midY
         let room = inStrip ? 2 * min(markMidY - cap.minY, cap.maxY - markMidY) : cap.height
+        if inStrip, drawsDisc {
+            drawDisc(in: context, keycap: cap, midY: markMidY)
+            return
+        }
         if !inStrip {
             context.fillKeycap(
                 cap,
@@ -162,6 +169,23 @@ final class HexKeyControl: UIControl {
         }
         if let translatingTo {
             drawTranslationBadge(TranslationPasteChoice.badge(target: translatingTo), keycap: cap, mark: markRect)
+        }
+    }
+
+    /// Fala: the Function disc. The key's fill (a shade darker while pressed) in a circle as
+    /// wide as the keycap, on the words' line, and SF Symbols' waveform in the keys' ink.
+    private func drawDisc(in context: CGContext, keycap cap: CGRect, midY: CGFloat) {
+        let side = min(cap.width, cap.height)
+        let disc = CGRect(x: cap.midX - side / 2, y: midY - side / 2, width: side, height: side)
+        (isHighlighted ? palette.keyPressedFill : palette.keyFill).setFill()
+        UIBezierPath(ovalIn: disc).fill()
+        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
+        if let image = UIImage(systemName: "waveform", withConfiguration: config)?
+            .withTintColor(palette.textBase, renderingMode: .alwaysOriginal) {
+            image.draw(at: CGPoint(x: disc.midX - image.size.width / 2, y: disc.midY - image.size.height / 2))
+        }
+        if let translatingTo {
+            drawTranslationBadge(TranslationPasteChoice.badge(target: translatingTo), keycap: cap, mark: disc)
         }
     }
 
@@ -291,11 +315,14 @@ final class HexKeyRecordingPanel: UIView {
         cancelButton.addTarget(self, action: #selector(cancel), for: .touchUpInside)
         doneButton.symbol = "checkmark"
         doneButton.isPrimary = true
+        doneButton.isAction = true
+        cancelButton.isPrimary = true
         doneButton.accessibilityLabel = "Done"
         doneButton.addTarget(self, action: #selector(done), for: .touchUpInside)
 
         doneSpinner.hidesWhenStopped = true
-        doneSpinner.color = palette.textBase
+        // Fala: the spinner turns in the blue ✓ disc, so it's white.
+        doneSpinner.color = .white
         doneSpinner.isUserInteractionEnabled = false
         for view in [styleButton, well, cancelButton, doneButton, doneSpinner] {
             addSubview(view)
@@ -346,7 +373,10 @@ final class HexKeyRecordingPanel: UIView {
         cancelButton.alpha = shown ? 1 : 0
         doneButton.transform = shown || !moves ? .identity : small
         let tuck = doneButton.center.x - cancelButton.center.x
-        cancelButton.transform = shown || !moves ? .identity : CGAffineTransform(translationX: tuck, y: 0).scaledBy(x: s, y: s)
+        // Fala: in the Function bar ✕ sits in the ⚡ disc's spot at the other end, so it grows in
+        // place there rather than sliding out from under ✓.
+        cancelButton.transform = shown || !moves ? .identity
+            : metrics.appleBar ? small : CGAffineTransform(translationX: tuck, y: 0).scaledBy(x: s, y: s)
         // The spinner in ✓'s spot leaves with it, into the Hex key's spot.
         doneSpinner.alpha = shown && isTranscribing ? 1 : 0
         doneSpinner.transform = shown || !moves ? .identity : small
@@ -403,7 +433,7 @@ final class HexKeyRecordingPanel: UIView {
         scope.isDark = palette.isDark
         cancelButton.palette = palette
         doneButton.palette = palette
-        doneSpinner.color = palette.textBase
+        doneSpinner.color = .white
     }
 
     override func layoutSubviews() {
@@ -414,11 +444,38 @@ final class HexKeyRecordingPanel: UIView {
         let rowH = metrics.stripPillHeight
         let rowY = metrics.stripInset
 
-        doneButton.cornerRadius = rowH / 2
-        cancelButton.cornerRadius = rowH / 2
         // Bounds and centre, not frames: ✕ and ✓ may be mid-scale as they come and go.
         let doneRect: CGRect
         let cancelRect: CGRect
+        if metrics.appleBar {
+            // Fala: the Function bar. ✓ (blue) takes the Hex key's disc and ✕ the ⚡ disc at the
+            // bar's other end, both 36 pt circles centred in their 59 pt cells on the words' line
+            // (`KeyboardLayout.functionDiscFrame`); the dots run between them.
+            let side = min(rowH, KeyboardMetrics.barHexKeyHeight)
+            let midY = rowY + rowH / 2
+            let cell = KeyboardMetrics.appleIconCellWidth
+            let leadX = horizontalInset + cell / 2
+            let trailX = bounds.width - horizontalInset - cell / 2
+            let doneX = hexOnLeading ? leadX : trailX
+            let cancelX = hexOnLeading ? trailX : leadX
+            doneRect = CGRect(x: doneX - side / 2, y: midY - side / 2, width: side, height: side)
+            cancelRect = CGRect(x: cancelX - side / 2, y: midY - side / 2, width: side, height: side)
+            doneButton.cornerRadius = side / 2
+            cancelButton.cornerRadius = side / 2
+            for (button, rect) in [(doneButton, doneRect), (cancelButton, cancelRect)] {
+                button.bounds = CGRect(origin: .zero, size: rect.size)
+                button.center = CGPoint(x: rect.midX, y: rect.midY)
+            }
+            doneSpinner.center = CGPoint(x: doneRect.midX, y: doneRect.midY)
+            styleButton.isHidden = true
+            let wellLeft = (hexOnLeading ? doneRect.maxX : cancelRect.maxX) + 8
+            let wellRight = (hexOnLeading ? cancelRect.minX : doneRect.minX) - 8
+            well.frame = CGRect(x: wellLeft, y: rowY, width: max(24, wellRight - wellLeft), height: rowH)
+            scope.frame = well.bounds
+            return
+        }
+        doneButton.cornerRadius = rowH / 2
+        cancelButton.cornerRadius = rowH / 2
         if hexOnLeading {
             doneRect = CGRect(x: innerLeft, y: rowY, width: rowH, height: rowH)
             cancelRect = CGRect(x: doneRect.maxX + 6, y: rowY, width: rowH, height: rowH)
@@ -475,6 +532,8 @@ final class PanelKeyButton: UIControl {
     var title: String? { didSet { setNeedsDisplay() } }
     var symbol: String? { didSet { setNeedsDisplay() } }
     var isPrimary = false { didSet { setNeedsDisplay() } }
+    /// Fala: the blue action fill with white ink, the Function bar's ✓.
+    var isAction = false { didSet { setNeedsDisplay() } }
     var cornerRadius: CGFloat = FullKeyboardPalette.cornerRadius { didSet { setNeedsDisplay() } }
     /// Draws its title and symbol as the letter keys' 123 and delete do (the emoji panel's
     /// ABC and delete), not the recording panel's bolder ones.
@@ -507,12 +566,14 @@ final class PanelKeyButton: UIControl {
 
     override func draw(_ rect: CGRect) {
         guard let context = UIGraphicsGetCurrentContext() else { return }
-        if isHighlighted {
+        if isAction {
+            context.fillKeycap(bounds, fill: isHighlighted ? palette.actionPressedFill : palette.actionFill, radius: cornerRadius)
+        } else if isHighlighted {
             context.fillKeycap(bounds, fill: palette.keyPressedFill, radius: cornerRadius)
         } else if !isPlain {
             context.fillKeycap(bounds, fill: isPrimary ? palette.keyFill : palette.functionFill, radius: cornerRadius)
         }
-        let ink = isEnabled ? palette.textBase : palette.textMuted
+        let ink = isAction ? UIColor.white : (isEnabled ? palette.textBase : palette.textMuted)
         if let symbol {
             let config = drawsLikeKeys
                 ? UIImage.SymbolConfiguration(pointSize: bounds.height < 34 ? 16 : 18, weight: .regular)

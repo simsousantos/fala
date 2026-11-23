@@ -795,9 +795,33 @@ nonisolated struct KeyboardLayout: Equatable, Sendable {
         let full = stripBarFrame
         guard let hex = key(.hex), hex.row < 0 else { return full }
         let reserved = metrics.appleBar ? KeyboardMetrics.appleIconCellWidth : hex.frame.width + metrics.side + metrics.gap
-        return hexOnLeading
+        var strip = hexOnLeading
             ? CGRect(x: full.minX + reserved, y: full.minY, width: full.width - reserved, height: full.height)
             : CGRect(x: full.minX, y: full.minY, width: full.width - reserved, height: full.height)
+        // Fala: the Function disc's cell at the other end comes out of the strip too.
+        if functionDiscFrame != nil {
+            let cell = KeyboardMetrics.appleIconCellWidth
+            strip = hexOnLeading
+                ? CGRect(x: strip.minX, y: strip.minY, width: strip.width - cell, height: strip.height)
+                : CGRect(x: strip.minX + cell, y: strip.minY, width: strip.width - cell, height: strip.height)
+        }
+        return strip
+    }
+
+    /// Fala: the Function-style disc (⚡, and after a dictation its shortcuts), centred in a
+    /// cell as wide as the Hex key's at the other end of Apple's bar, on the words' line. Its
+    /// place comes from the strip's metrics, never from the keyboard's top edge: iOS sometimes
+    /// draws 17 pt of its own panel above a third-party keyboard and sometimes doesn't, and the
+    /// strip already keeps that room (`KeyboardMetrics.stripBarHeight`). Only in Apple's bar
+    /// with the Hex key in it, and not split.
+    var functionDiscFrame: CGRect? {
+        guard metrics.appleBar, split == nil, let hex = key(.hex), hex.row < 0 else { return nil }
+        let bar = stripBarFrame
+        let cell = KeyboardMetrics.appleIconCellWidth
+        let side = KeyboardMetrics.barHexKeyHeight
+        let midX = hexOnLeading ? bar.maxX - cell / 2 : bar.minX + cell / 2
+        let midY = metrics.stripTop + metrics.stripTextCenter
+        return CGRect(x: midX - side / 2, y: midY - side / 2, width: side, height: side)
     }
 
     /// The three suggestion slots, in keyboard coordinates: thirds of the bar, as Apple's are
@@ -1249,7 +1273,8 @@ nonisolated struct KeyboardLayout: Equatable, Sendable {
             // A bare mark in a target wider than tall, inset like the suggestion pills; in Apple's
             // bar the same mark, centred in its cell on the words' line.
             let height = m.appleBar ? KeyboardMetrics.barHexKeyHeight : m.stripPillHeight
-            let hexWidth: CGFloat = 44
+            // Fala: in Apple's bar the key is the Function-style round disc (as wide as tall).
+            let hexWidth: CGFloat = m.appleBar ? KeyboardMetrics.barHexKeyHeight : 44
             let cell = KeyboardMetrics.appleIconCellWidth
             let x = m.appleBar
                 ? (placement == .stripLeading ? inset + (cell - hexWidth) / 2 : width - inset - (cell + hexWidth) / 2)

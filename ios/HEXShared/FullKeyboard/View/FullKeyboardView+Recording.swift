@@ -11,6 +11,8 @@ extension FullKeyboardView {
     /// ✓ and the key takes its spot back. Reduce Motion crossfades instead.
     func setRecording(_ recording: Bool) {
         showsRecording = recording
+        // Fala: the Function discs leave with the strip and come back with it.
+        defer { updateFunctionBarVisibility() }
         dismissStyleMenu()
         if recording { closeEmojiPanel(); hideModelNotice() }
         let animated = window != nil

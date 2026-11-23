@@ -41,6 +41,16 @@ final class FullKeyboardView: UIView {
     let callout = KeyCalloutView()
     let accentCallout = AccentCalloutView()
     let hexKey = HexKeyControl()
+    // Fala: the Function keyboard's bar (FullKeyboardView+Function.swift): the ⚡ disc, the
+    // two shortcuts after a dictation, and what an action is doing or replaced.
+    let functionButton = FunctionDiscButton()
+    let functionTranslateButton = FunctionDiscButton()
+    let functionFormalButton = FunctionDiscButton()
+    var functionUndo: FalaFunctionUndo?
+    var functionUndoWork: DispatchWorkItem?
+    var functionIsBusy = false
+    var functionStatus: String?
+    var functionStatusWork: DispatchWorkItem?
     /// A theme's own opaque panel behind every key and the strip, at the glass panel's own
     /// frame and top corners (`KeyboardThemePanelView`): this view's own background stays
     /// clear, since filling its whole rect would draw square corners over the app. Hidden
@@ -64,7 +74,7 @@ final class FullKeyboardView: UIView {
     private var barHold = HexKeyGesture()
     private var barHoldTouch: UITouch?
     private var barHoldWork: DispatchWorkItem?
-    private var lastDictation: DictationUndo?
+    private(set) var lastDictation: DictationUndo?
     private let inputModeListTouch = InputModeListTouch()
     /// The model's stage last seen, for a selection's dictation ending
     /// (`FullKeyboardView+Selection`).
@@ -173,6 +183,7 @@ final class FullKeyboardView: UIView {
         addSubview(globeButton)
         addSubview(callout)
         addSubview(accentCallout)
+        setUpFunctionBar()
         accentCallout.isHidden = true
 
         stripView.onSelectSuggestion = { [weak self] suggestion in
@@ -185,7 +196,10 @@ final class FullKeyboardView: UIView {
             self.engine.acceptSuggestion(suggestion)
         }
         stripView.onHoldSuggestion = { [weak self] suggestion in self?.offerVocabulary(suggestion) }
-        stripView.onUndoDictation = { [weak self] in self?.undoDictation() }
+        stripView.onUndoDictation = { [weak self] in
+            guard let self else { return }
+            if self.functionUndo != nil { self.undoFunction() } else { self.undoDictation() }
+        }
         stripView.onPaste = { [weak self] in self?.pasteFromClipboard() }
         stripView.onOpenHexFromHint = { [weak self] in self?.openSetupFromHint() }
         stripView.onDismissNotice = { [weak self] in self?.dismissModelNotice() }
@@ -776,7 +790,9 @@ final class FullKeyboardView: UIView {
         stripView.textCenterY = layout.metrics.stripTextCenter
         stripView.chipHeight = layout.metrics.stripChipHeight
         stripView.appleBar = layout.metrics.appleBar
+        // Fala: the Function bar draws dividers only between the words, none beside its discs.
         stripView.dividerBesideHex = layout.metrics.appleBar && layout.key(.hex).map { $0.row < 0 } == true
+            && layout.functionDiscFrame == nil
         stripView.hexOnLeading = layout.hexOnLeading
         stripView.barMidX = layout.stripBarFrame.midX - layout.stripFrame.minX
         // The bar from the keyboard's top to the strip's bottom, up to the Hex key beside it.
@@ -791,6 +807,7 @@ final class FullKeyboardView: UIView {
         hexKey.cornerRadius = layout.metrics.cornerRadius
         if let hex = layout.key(.hex) {
             hexKey.inStrip = hex.row < 0
+            hexKey.drawsDisc = layout.metrics.appleBar && hex.row < 0
             // Bounds and centre: the key may be mid-scale as the recording bar comes and goes.
             let hit = hex.hitFrame.offsetBy(dx: 0, dy: lift)
             hexKey.bounds = CGRect(origin: .zero, size: hit.size)
@@ -798,6 +815,7 @@ final class FullKeyboardView: UIView {
             hexKey.keycapFrame = hex.frame.offsetBy(dx: -hex.hitFrame.minX, dy: -hex.hitFrame.minY)
             hexKey.markCenterY = layout.metrics.stripTop + layout.metrics.stripTextCenter - hex.hitFrame.minY
         }
+        layoutFunctionBar(layout, lift: lift)
         if let globe = layout.key(.globe), emojiPanel == nil || routedTarget.isSearching {
             globeButton.isHidden = false
             globeButton.frame = globe.hitFrame.offsetBy(dx: 0, dy: lift)
@@ -909,7 +927,10 @@ final class FullKeyboardView: UIView {
         }
         // Without Full Access the strip suggests and corrects like any keyboard's; what
         // dictation needs shows only once the Hex key is tapped (`showFullAccessHint`).
-        let status: String? = if model.hasFullAccess, model.stagePhase == .failed {
+        // Fala: what a ⚡ action is doing, or why it couldn't, comes first.
+        let status: String? = if let functionStatus {
+            functionStatus
+        } else if model.hasFullAccess, model.stagePhase == .failed {
             model.statusMessage
         } else {
             nil
@@ -926,6 +947,7 @@ final class FullKeyboardView: UIView {
         if model.hasFullAccess, model.offeredDictation != nil {
             if case .code = clipboardOffer {} else { clipboardOffer = .dictation }
         }
+        if functionStatus != nil { clipboardOffer = nil }
         stripOffer = clipboardOffer
         var suggestions = withStripEmoji(engine.suggestions, quiet: lastDictation != nil || status != nil || clipboardOffer != nil)
         // The experiment hides the words, not the strip: Undo, Paste, status, notices and the
@@ -937,14 +959,16 @@ final class FullKeyboardView: UIView {
         if hidesWordSuggestions {
             suggestions = suggestions.filter { $0.kind == .revert }
         }
+        if functionStatus != nil { suggestions = [] }
         stripView.update(
             suggestions: suggestions,
-            showsUndo: lastDictation != nil,
+            showsUndo: lastDictation != nil || functionUndo != nil,
             statusText: status,
             clipboard: clipboardOffer,
             fullAccessHint: showsFullAccessHint && !model.hasFullAccess,
             notice: allowPasteNotice ?? vocabularyNotice ?? translationNotice ?? modelNotice
         )
+        updateFunctionBarVisibility()
     }
 
     /// The last dictation went in as spoken while Translate what I say was on: what happened,
