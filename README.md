@@ -2,7 +2,7 @@
 
 Teclado de iPhone para uso pessoal, com ditado 100% local em português do Brasil.
 
-- **Base:** o app de iPhone do [Hex](https://github.com/anomalyco/hex) (licença MIT), importado de `anomalyco/hex` no commit `0304eb1`. Vem dele o teclado, o retorno tátil, a autocorreção e o ditado no próprio iPhone.
+- **Base:** o app de iPhone do [Hex](https://github.com/anomalyco/hex) (licença MIT), importado de `anomalyco/hex` no commit `0304eb1` e atualizado com as mudanças do Hex até `d83d73c` (23/11/2026). Para trazer as próximas: `git fetch upstream` e aplicar o diff de `ios/` desde o último commit absorvido. Vem dele o teclado, o retorno tátil, a autocorreção e o ditado no próprio iPhone.
 - **Por cima:** a barra superior no estilo do Function Keyboard. Ela tem o botão de raio com Reescrever, Formalizar, Traduzir, Contatos e Ajustes, os atalhos que aparecem depois de ditar, as pílulas Reescrevendo e Desfazer, e a gravação com ✕, a onda sonora e o ✓ azul.
 
 Não é distribuído na App Store nem no TestFlight. Ele é instalado direto pelo Xcode.
