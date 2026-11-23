@@ -63,7 +63,7 @@ final class FunctionDiscButton: UIButton {
 /// Fala, temporary: while true, an empty field's strip shows what the keyboard can measure of
 /// its place on screen, to look for a sign of the 17 pt iOS sometimes draws above it.
 enum FalaDebug {
-    static let showsGeometry = true
+    static let showsGeometry = false
 }
 
 @MainActor
