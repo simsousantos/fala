@@ -290,47 +290,42 @@ extension KeyboardLanguage {
     var supportsSwipeTyping: Bool { self == .english || self == .spanish }
 }
 
-/// The light trail behind a swiping finger: the last `tail` seconds of its path, which
-/// shortens behind the finger and fades when it lifts. A shape layer, so the keyboard draws
-/// no bitmap of its own for it.
+/// Fala: the trail behind a swiping finger, as Apple's keyboard draws it (QuickPath, iOS 26):
+/// a soft grey comet, round and about 16 pt thick at the finger, tapering to a point along the
+/// last `tail` seconds of the path, all in one translucent tone (black at 22% on the light
+/// keyboard, white at 26% on the dark one) so it darkens the keys and the gaps alike. It fades
+/// when the finger lifts. Measured on a screen recording of the iPhone keyboard, 3 px a point.
 @MainActor
 final class SwipeTrailView: UIView {
-    static let tail: TimeInterval = 0.45
-    static let width: CGFloat = 6
+    static let tail: TimeInterval = 0.32
+    /// The head's thickness; the rest of the trail narrows from it to nothing.
+    static let width: CGFloat = 16
+    /// How the thickness falls off toward the tail: under 1 keeps it full longer near the head.
+    static let taper: CGFloat = 0.75
 
     var palette = FullKeyboardPalette(isDark: false) {
-        didSet { if palette != oldValue { shape.strokeColor = Self.color(palette).cgColor } }
+        didSet { if palette != oldValue { setNeedsDisplay() } }
     }
     var clock: () -> TimeInterval = { CACurrentMediaTime() }
 
-    private let shape = CAShapeLayer()
     private var points: [(point: CGPoint, at: TimeInterval)] = []
     private var link: CADisplayLink?
+    private var showing = false
 
     override init(frame: CGRect) {
         super.init(frame: frame)
         isUserInteractionEnabled = false
         isOpaque = false
         backgroundColor = .clear
+        contentMode = .redraw
         isAccessibilityElement = false
-        shape.fillColor = nil
-        shape.lineCap = .round
-        shape.lineJoin = .round
-        shape.lineWidth = Self.width
-        shape.strokeColor = Self.color(palette).cgColor
-        layer.addSublayer(shape)
     }
 
     @available(*, unavailable)
     required init?(coder: NSCoder) { fatalError() }
 
     static func color(_ palette: FullKeyboardPalette) -> UIColor {
-        palette.isDark ? UIColor(white: 1, alpha: 0.5) : palette.actionFill.withAlphaComponent(0.42)
-    }
-
-    override func layoutSubviews() {
-        super.layoutSubviews()
-        shape.frame = bounds
+        palette.isDark ? UIColor(white: 1, alpha: 0.26) : UIColor(red: 0.08, green: 0.08, blue: 0.14, alpha: 0.22)
     }
 
     /// Off screen, the display link (which holds this view) stops.
@@ -339,30 +334,34 @@ final class SwipeTrailView: UIView {
         if window == nil { clear() }
     }
 
-    var isShowing: Bool { shape.path != nil }
+    var isShowing: Bool { showing }
 
     func begin(_ start: [CGPoint]) {
-        shape.removeAllAnimations()
-        shape.opacity = 1
+        layer.removeAnimation(forKey: "fade")
+        layer.opacity = 1
         let now = clock()
         points = start.map { ($0, now) }
+        showing = true
         if link == nil, window != nil {
             let link = CADisplayLink(target: self, selector: #selector(tick))
+            link.preferredFrameRateRange = CAFrameRateRange(minimum: 60, maximum: 120, preferred: 120)
             link.add(to: .main, forMode: .common)
             self.link = link
         }
-        redraw()
+        prune()
+        setNeedsDisplay()
     }
 
     func add(_ point: CGPoint) {
         points.append((point, clock()))
-        redraw()
+        prune()
+        setNeedsDisplay()
     }
 
-    /// The finger lifted: the trail fades out.
+    /// The finger lifted: the trail fades out where it is.
     func fade() {
         stopTicking()
-        guard shape.path != nil else { return }
+        guard showing else { return }
         CATransaction.begin()
         CATransaction.setCompletionBlock { [weak self] in
             MainActor.assumeIsolated {
@@ -373,20 +372,20 @@ final class SwipeTrailView: UIView {
         let fade = CABasicAnimation(keyPath: "opacity")
         fade.fromValue = 1
         fade.toValue = 0
-        fade.duration = 0.2
-        shape.opacity = 0
-        shape.add(fade, forKey: "fade")
+        fade.duration = 0.22
+        fade.timingFunction = CAMediaTimingFunction(name: .easeOut)
+        layer.opacity = 0
+        layer.add(fade, forKey: "fade")
         CATransaction.commit()
     }
 
     func clear() {
         stopTicking()
         points.removeAll()
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        shape.removeAllAnimations()
-        shape.path = nil
-        CATransaction.commit()
+        showing = false
+        layer.removeAnimation(forKey: "fade")
+        layer.opacity = 1
+        setNeedsDisplay()
     }
 
     private func stopTicking() {
@@ -394,24 +393,64 @@ final class SwipeTrailView: UIView {
         link = nil
     }
 
+    /// While the finger rests the tail keeps shrinking toward it.
     @objc private func tick() {
-        redraw()
+        prune()
+        setNeedsDisplay()
     }
 
-    private func redraw() {
-        // Points older than the tail drop off behind the finger, down to its last stretch.
+    /// Points older than the tail drop off behind the finger, down to its last stretch.
+    private func prune() {
         if let old = points.lastIndex(where: { $0.at < clock() - Self.tail }) {
             let drop = min(old, points.count - 2)
             if drop > 0 { points.removeFirst(drop) }
         }
-        let path = CGMutablePath()
-        if let first = points.first {
-            path.move(to: first.point)
-            for p in points.dropFirst() { path.addLine(to: p.point) }
+    }
+
+    override func draw(_ rect: CGRect) {
+        guard showing, let head = points.last, let context = UIGraphicsGetCurrentContext() else { return }
+        let now = clock()
+        // Each point's thickness: by its age, so the tail shrinks smoothly toward a still
+        // finger, and full at the finger.
+        func thickness(_ at: TimeInterval) -> CGFloat {
+            let left = CGFloat(max(0, 1 - (now - at) / Self.tail))
+            return Self.width * pow(left, Self.taper)
         }
-        CATransaction.begin()
-        CATransaction.setDisableActions(true)
-        shape.path = points.count >= 2 ? path : nil
-        CATransaction.commit()
+        // One translucent tone for the whole trail: the overlapping pieces are drawn opaque in
+        // a transparency layer, and the layer takes the tone's alpha, so no joint darkens.
+        let color = Self.color(palette)
+        var alpha: CGFloat = 0
+        color.getRed(nil, green: nil, blue: nil, alpha: &alpha)
+        context.setAlpha(alpha)
+        context.beginTransparencyLayer(auxiliaryInfo: nil)
+        let solid = color.withAlphaComponent(1).cgColor
+        context.setFillColor(solid)
+        context.setStrokeColor(solid)
+        context.setLineCap(.round)
+        context.setLineJoin(.round)
+        // The head: a full round end at the finger.
+        let r = Self.width / 2
+        context.fillEllipse(in: CGRect(x: head.point.x - r, y: head.point.y - r, width: 2 * r, height: 2 * r))
+        // The body: each step as a quadrilateral between its two ends' thicknesses, with round
+        // joints so turns stay smooth.
+        for i in points.indices.dropFirst() {
+            let a = points[i - 1], b = points[i]
+            let wa = thickness(a.at), wb = i == points.count - 1 ? Self.width : thickness(b.at)
+            guard max(wa, wb) > 0.3 else { continue }
+            let dx = b.point.x - a.point.x, dy = b.point.y - a.point.y
+            let length = hypot(dx, dy)
+            guard length > 0.01 else { continue }
+            let nx = -dy / length, ny = dx / length
+            context.move(to: CGPoint(x: a.point.x + nx * wa / 2, y: a.point.y + ny * wa / 2))
+            context.addLine(to: CGPoint(x: b.point.x + nx * wb / 2, y: b.point.y + ny * wb / 2))
+            context.addLine(to: CGPoint(x: b.point.x - nx * wb / 2, y: b.point.y - ny * wb / 2))
+            context.addLine(to: CGPoint(x: a.point.x - nx * wa / 2, y: a.point.y - ny * wa / 2))
+            context.closePath()
+            context.fillPath()
+            if wb > 0.5 {
+                context.fillEllipse(in: CGRect(x: b.point.x - wb / 2, y: b.point.y - wb / 2, width: wb, height: wb))
+            }
+        }
+        context.endTransparencyLayer()
     }
 }

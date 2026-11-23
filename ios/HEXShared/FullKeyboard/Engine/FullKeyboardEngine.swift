@@ -845,6 +845,7 @@ final class FullKeyboardEngine {
         touchOrder.removeAll()
         isSwiping = false
         swipePreview = nil
+        swipePreviewOthers = []
         activeAccentMenu = nil
         activeAccentTouchID = nil
         if shift.isHeld {
@@ -1311,6 +1312,8 @@ final class FullKeyboardEngine {
     private(set) var isSwiping = false
     /// What the swipe under way reads as so far, for the strip.
     private(set) var swipePreview: String?
+    /// Fala: the next two readings so far, beside it in the strip, as Apple's keyboard shows them.
+    private(set) var swipePreviewOthers: [String] = []
 
     /// A letter touch became a swipe: its key no longer types.
     func beginSwipe(touchID id: Int) {
@@ -1318,6 +1321,7 @@ final class FullKeyboardEngine {
         touchOrder.removeAll { $0 == id }
         isSwiping = true
         swipePreview = nil
+        swipePreviewOthers = []
         typingLog?.ui("swipe_start", [TypingLogField("id", .int(id))])
         refreshSuggestions()
         onChange?()
@@ -1327,9 +1331,12 @@ final class FullKeyboardEngine {
     /// that may be offered.
     func showSwipePreview(_ words: [String]) {
         guard isSwiping else { return }
-        let next = swipeRetries.reordered(swipeReadings(words), before: typingContext).first.map { swipeCased($0, capital: swipeCapital) }
-        guard next != swipePreview else { return }
+        let readings = swipeRetries.reordered(swipeReadings(words), before: typingContext).prefix(3).map { swipeCased($0, capital: swipeCapital) }
+        let next = readings.first
+        let others = Array(readings.dropFirst())
+        guard next != swipePreview || others != swipePreviewOthers else { return }
         swipePreview = next
+        swipePreviewOthers = others
         refreshSuggestions()
     }
 
@@ -1341,6 +1348,7 @@ final class FullKeyboardEngine {
         guard isSwiping else { return }
         isSwiping = false
         swipePreview = nil
+        swipePreviewOthers = []
         // The finger came up off a key: a quick tap on the strip's lower half next is a key.
         lastKeyTouchAt = clock()
         let readings = swipeRetries.typing(swipeReadings(words), before: typingContext)

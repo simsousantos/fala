@@ -127,7 +127,13 @@ extension FullKeyboardEngine {
     /// likeliest in the centre slot); nil otherwise.
     var swipeSuggestions: [KeyboardSuggestion]? {
         if isSwiping {
-            return swipePreview.map { [KeyboardSuggestion(displayText: $0, replacement: $0, kind: .primary(autoReplace: true))] } ?? []
+            // Fala: as Apple's keyboard, the best reading so far in the centre in its pill, the
+            // next two beside it.
+            guard let best = swipePreview else { return [] }
+            let main = KeyboardSuggestion(displayText: best, replacement: best, kind: .primary(autoReplace: true))
+            let others = swipePreviewOthers.map { KeyboardSuggestion(displayText: $0, replacement: $0, kind: .swiped) }
+            guard let first = others.first else { return [main] }
+            return [first, main] + others.dropFirst()
         }
         guard let swipedWord else { return nil }
         let items = swipedWord.alternatives.prefix(3).map { KeyboardSuggestion(displayText: $0, replacement: $0, kind: .swiped) }
