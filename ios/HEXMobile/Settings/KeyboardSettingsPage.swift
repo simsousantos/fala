@@ -313,6 +313,8 @@ struct KeyboardSettingsPage: View {
 
                 if emoji {
                     SettingsDivider()
+                    EmojiSkinToneRow()
+                    SettingsDivider()
                     Button {
                         confirmingClearEmoji = true
                     } label: {
@@ -353,5 +355,51 @@ struct KeyboardSettingsPage: View {
             emojiHistoryEmpty = EmojiUsageStore().isEmpty
             revision += 1
         }
+    }
+}
+
+/// Fala: Settings › Keyboard › Skin tone. The tone every emoji opens in on the keyboard and in
+/// its suggestions; holding an emoji still picks another for that one alone
+/// (`EmojiUsageStore.defaultTone`).
+private struct EmojiSkinToneRow: View {
+    @State private var selected = EmojiUsageStore().defaultTone
+    private static let hands = ["👋", "👋🏻", "👋🏼", "👋🏽", "👋🏾", "👋🏿"]
+    private static let names = ["Amarelo", "Clara", "Média-clara", "Média", "Média-escura", "Escura"]
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            SettingsRowLabel(
+                title: "Tom de pele",
+                detail: "Os emojis abrem neste tom. Segure um emoji no teclado para trocar só ele."
+            )
+            HStack(spacing: 6) {
+                ForEach(Self.hands.indices, id: \.self) { tone in
+                    Button {
+                        selected = tone
+                        let store = EmojiUsageStore()
+                        store.defaultTone = tone
+                    } label: {
+                        Text(Self.hands[tone])
+                            .font(.system(size: 26))
+                            .frame(maxWidth: .infinity, minHeight: 44)
+                            .background(
+                                RoundedRectangle(cornerRadius: HexTheme.controlRadius, style: .continuous)
+                                    .fill(selected == tone ? HexTheme.layer02 : Color.clear)
+                            )
+                            .overlay(
+                                RoundedRectangle(cornerRadius: HexTheme.controlRadius, style: .continuous)
+                                    .strokeBorder(selected == tone ? HexTheme.borderStrong : Color.clear, lineWidth: 1)
+                            )
+                            .contentShape(Rectangle())
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityLabel(Self.names[tone])
+                    .accessibilityAddTraits(selected == tone ? .isSelected : [])
+                }
+            }
+            .sensoryFeedback(.selection, trigger: selected)
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
     }
 }

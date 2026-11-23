@@ -13,13 +13,23 @@ final class EmojiUsageStore {
     private enum Key {
         static let usage = "emoji.usage"
         static let tones = "emoji.tones"
+        static let defaultTone = "emoji.defaultTone"
+    }
+
+    /// Fala: the skin tone every emoji opens in (Settings › Keyboard › Skin tone): 0 for the
+    /// default yellow, else 1 (light) to 5 (dark). One picked for an emoji by holding it
+    /// still wins for that emoji. Kept apart from the history, so clearing it keeps this.
+    var defaultTone: Int {
+        get { min(5, max(0, defaults?.integer(forKey: Key.defaultTone) ?? 0)) }
+        set { defaults?.set(min(5, max(0, newValue)), forKey: Key.defaultTone) }
     }
 
     private let defaults: UserDefaults?
     private let now: () -> Date
     /// Base emoji to [score at `last`, last use as seconds since 1970].
     private var usage: [String: [Double]]
-    /// Base emoji to the skin tone picked for it: 1 (light) to 5 (dark).
+    /// Base emoji to the skin tone picked for it, where it differs from `defaultTone`: 0 (the
+    /// default yellow) or 1 (light) to 5 (dark).
     private var tones: [String: Int]
 
     init(defaults: UserDefaults? = UserDefaults(suiteName: KeyboardBridge.appGroup), now: @escaping () -> Date = Date.init) {
@@ -56,13 +66,15 @@ final class EmojiUsageStore {
         return scored.map { ($0.0, Float($0.1 / top)) }
     }
 
-    /// 0 for the default yellow, else 1 (light) to 5 (dark).
+    /// 0 for the default yellow, else 1 (light) to 5 (dark): the one picked for `base`, else
+    /// `defaultTone`.
     func tone(for base: String) -> Int {
-        tones[base] ?? 0
+        tones[base] ?? defaultTone
     }
 
+    /// A pick the same as `defaultTone` is forgotten, so the emoji follows the setting again.
     func setTone(_ tone: Int, for base: String) {
-        tones[base] = tone == 0 ? nil : tone
+        tones[base] = tone == defaultTone ? nil : tone
         defaults?.set(tones, forKey: Key.tones)
     }
 

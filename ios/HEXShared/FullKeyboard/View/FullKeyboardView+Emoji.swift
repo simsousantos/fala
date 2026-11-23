@@ -213,7 +213,7 @@ extension FullKeyboardView {
     func emojiText(_ entry: Int, library: EmojiLibrary, usage: EmojiUsageStore) -> String {
         let item = library.entries[entry]
         let tone = item.hasTones ? usage.tone(for: item.emoji) : 0
-        return tone > 0 ? item.tones[tone - 1] : item.emoji
+        return tone > 0 && tone <= item.tones.count ? item.tones[tone - 1] : item.emoji
     }
 
     /// Your emoji use as a score per index entry, for ranking shortcode matches.
@@ -339,7 +339,7 @@ extension FullKeyboardView {
         return EmojiSuggester.forFinishedWord(before, library: library).map { entry in
             let item = library.entries[entry]
             let tone = item.hasTones ? usage.tone(for: item.emoji) : 0
-            let emoji = tone > 0 ? item.tones[tone - 1] : item.emoji
+            let emoji = tone > 0 && tone <= item.tones.count ? item.tones[tone - 1] : item.emoji
             return KeyboardSuggestion(displayText: emoji, replacement: emoji, kind: .emoji)
         }
     }
