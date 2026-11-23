@@ -1155,6 +1155,12 @@ nonisolated extension KeyboardMetrics {
     /// the bar's bottom); the bubble fills its cell from 6 pt down to the bar's bottom, a 38 pt
     /// capsule, and the dividers are 1 × 24 pt, hidden beside the bubble.
     static let appleBarHeight: CGFloat = 44
+    /// Fala, test: in some apps (Spotlight, Notes: Liquid Glass hosts) iOS draws about 16 pt of
+    /// its own panel above a third-party keyboard and in others (WhatsApp) nothing, with the keys
+    /// and the bar in the same place either way (iPhone, iOS 26: the panel's top 47 px higher at
+    /// 3 px per point). If iOS only pads a keyboard up to a minimum height, a keyboard this much
+    /// taller gets no band, and looks the same everywhere.
+    static let falaTopRoom: CGFloat = 17
     static let appleBarTurnedGap: CGFloat = 6
     static let appleBarTextAboveBottom: CGFloat = 19
     static let appleBubbleHeight: CGFloat = 38
@@ -1173,7 +1179,10 @@ nonisolated extension KeyboardMetrics {
     /// 6 pt turned. Upright the keyboard grows 6 pt upward (rows stay put) and its top edge is
     /// Apple's; turned it was already Apple's height (42 + 8 pt), and only the strip changes.
     func withAppleBar(turned: Bool) -> KeyboardMetrics {
-        var m = rebuilt(stripHeight: Self.appleBarHeight, stripBottom: turned ? Self.appleBarTurnedGap : Self.stripGap)
+        // Fala: upright, the bar takes `falaTopRoom` more above its words (they stay 19 pt above its
+        // bottom), so the keyboard is as tall as iOS makes it where it adds its band.
+        let room = turned ? 0 : Self.falaTopRoom
+        var m = rebuilt(stripHeight: Self.appleBarHeight + room, stripBottom: turned ? Self.appleBarTurnedGap : Self.stripGap)
         m.appleBar = true
         return m
     }
