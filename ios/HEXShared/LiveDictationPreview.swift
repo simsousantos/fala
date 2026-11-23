@@ -215,9 +215,11 @@ final class LiveDictationPreviewHost {
     private func sync(_ transcript: LiveTranscript?) {
         guard let keyboard else { return }
         let live = keyboard.model.liveText
+        let phase = keyboard.model.stagePhase
+        let isListening = phase == .recording || phase == .transcribing
         // Fala: the keys stay while recording, as the Function keyboard's do; only the bar
         // above them changes (the wave, ✕ and ✓). The words over the keys never show.
-        guard Self.falaShowsWordsOverKeys, keyboard.showsRecording, live.showsPreview, let transcript else {
+        guard Self.falaShowsWordsOverKeys, keyboard.showsRecording, isListening, live.showsPreview, let transcript else {
             hide()
             return
         }

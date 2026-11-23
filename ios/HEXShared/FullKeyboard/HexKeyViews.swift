@@ -280,7 +280,8 @@ final class HexKeyRecordingPanel: UIView {
     private let cancelButton = PanelKeyButton()
     private let doneButton = PanelKeyButton()
     private let doneSpinner = UIActivityIndicatorView(style: .medium)
-    private var isTranscribing = false
+    private var currentPhase: DotScopePhase?
+    private var showsSpinner = false
     /// Width of one modifier key, so ✕ lines up with 123 + space's start.
     var sideKeyWidth: CGFloat = 50 { didSet { setNeedsLayout() } }
     var horizontalInset: CGFloat = 0 { didSet { setNeedsLayout() } }
@@ -345,24 +346,43 @@ final class HexKeyRecordingPanel: UIView {
     }
 
     func update(phase: DotScopePhase, style: DictationStyle) {
-        let wasTranscribing = isTranscribing
-        isTranscribing = phase == .processing
+        let wasShowingSpinner = showsSpinner
+        let firstUpdate = currentPhase == nil
+        currentPhase = phase
+        showsSpinner = phase == .starting || phase == .processing
         scope.phase = phase
-        doneButton.isAction = !isTranscribing
+        // Fala: Function's wave: dots while the microphone starts, bars while you speak, the
+        // sweeping packet while it transcribes; ✓ is blue until the spinner takes its spot.
+        doneButton.isAction = !showsSpinner
         switch phase {
         case .recording: wave.start()
         case .processing: wave.freeze()
-        case .hidden, .idle, .failed: wave.reset()
+        default: wave.reset()
         }
-        // The scope, then two round buttons, ✕ and ✓; once the recording stops the ✓ turns into
-        // the spinner in the same spot, so there's one place to look, and ✕ still cancels.
+        // The scope, then two round buttons, ✕ and ✓; while starting (waiting for the first
+        // audio buffer) and while transcribing, ✓'s spot shows the spinner so there's one place
+        // to look and no checkmark before the mic is live, while ✕ still cancels.
         doneButton.isPrimary = true
-        doneButton.isEnabled = !isTranscribing
-        doneButton.accessibilityLabel = isTranscribing ? "Transcribing" : "Done"
-        if isTranscribing != wasTranscribing {
-            swapDone(toSpinner: isTranscribing)
+        doneButton.isEnabled = !showsSpinner
+        doneButton.accessibilityLabel = switch phase {
+        case .starting: String(localized: "Starting microphone")
+        case .processing: String(localized: "Transcribing")
+        default: String(localized: "Done")
+        }
+        if firstUpdate {
+            doneButton.symbol = showsSpinner ? nil : "checkmark"
+            if showsSpinner {
+                doneSpinner.alpha = 1
+                doneSpinner.transform = .identity
+                doneSpinner.startAnimating()
+            } else {
+                doneSpinner.alpha = 0
+                doneSpinner.stopAnimating()
+            }
+        } else if showsSpinner != wasShowingSpinner {
+            swapDone(toSpinner: showsSpinner)
         } else {
-            doneButton.symbol = isTranscribing ? nil : "checkmark"
+            doneButton.symbol = showsSpinner ? nil : "checkmark"
         }
         let config = UIImage.SymbolConfiguration(pointSize: 9, weight: .semibold)
         styleButton.setImage(
@@ -390,7 +410,7 @@ final class HexKeyRecordingPanel: UIView {
         cancelButton.transform = shown || !moves ? .identity
             : metrics.appleBar ? small : CGAffineTransform(translationX: tuck, y: 0).scaledBy(x: s, y: s)
         // The spinner in ✓'s spot leaves with it, into the Hex key's spot.
-        doneSpinner.alpha = shown && isTranscribing ? 1 : 0
+        doneSpinner.alpha = shown && showsSpinner ? 1 : 0
         doneSpinner.transform = shown || !moves ? .identity : small
     }
 
@@ -434,9 +454,9 @@ final class HexKeyRecordingPanel: UIView {
         UIView.animate(
             springDuration: StripMotion.settle, bounce: 0, initialSpringVelocity: 0,
             delay: (toSpinner ? 0.06 : 0) * MotionDebug.slow,
-            options: [.allowUserInteraction], animations: changes
+            options: [.beginFromCurrentState, .allowUserInteraction], animations: changes
         ) { _ in
-            if !toSpinner, !self.isTranscribing { self.doneSpinner.stopAnimating() }
+            if !toSpinner, !self.showsSpinner { self.doneSpinner.stopAnimating() }
         }
     }
 
@@ -525,7 +545,7 @@ final class HexKeyRecordingPanel: UIView {
             "done": view(doneButton),
             "doneScale": Double(layer(doneButton).transform.m11),
             "spinner": doneSpinner.isAnimating ? view(doneSpinner) : 0,
-            "doneSymbol": isTranscribing ? 0 : 1,
+            "doneSymbol": showsSpinner ? 0 : 1,
             "scopeOpacity": Double(pose.opacity),
             "scopeLive": Double(pose.live),
             "scopeCool": Double(pose.cool),

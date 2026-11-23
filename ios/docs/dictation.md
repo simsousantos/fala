@@ -32,7 +32,10 @@ and its page load as the keyboard shows (unless memory is already short), withou
 the microphone, so no orange dot shows until you dictate; the full keyboard's
 Hex key then starts capture as the finger lands, before the touch is a tap or
 a hold, and a slide to the style menu or a cancelled touch drops it with
-nothing transcribed (its orange dot shows for that moment). iOS ends a keyboard that passes
+nothing transcribed (its orange dot shows for that moment). Until the first
+real PCM audio buffer arrives, the keyboard shows a calm starting state
+(dim resting dots and a spinner in Done's spot, with ✕ active to cancel) and
+switches to active recording only once audio is flowing. iOS ends a keyboard that passes
 its memory limit (about 60–90 MB depending on the model), so while less is left
 than starting needs (`os_proc_available_memory`: 32 MB for the first
 dictation, 24 MB once the capture web view is loaded) Dictate and the Hex key
@@ -234,14 +237,16 @@ dictionary doesn't know in lowercase (likely names). German keeps the case,
 since its dictionary takes nouns in lowercase; so does a language with no
 dictionary on the iPhone (`TranscriptFormatter.insertionText`).
 
-## While the keyboard records: Show what I say and Type as I speak (Settings › Dictation, iOS 26+)
+## While the keyboard records: Live words (Settings › Dictation, iOS 26+)
 
 While the keyboard records by itself (in-keyboard dictation),
 the capture's chunks also go to Apple's `SpeechAnalyzer` as they arrive
 (`AppleLiveTranscriber`: `SpeechTranscriber` with volatile and fast results, or
 `DictationTranscriber`'s progressive long dictation for its languages), only when the
-language's model is already on the iPhone: it never downloads one. **Show what I say**
-(on by default): the full keyboard's keys go and the words so far take their place
+language's model is already on the iPhone: it never downloads one. **Live words** is
+one choice of three, kept in two App Group keys (`LiveDictationSettings`: Show what I say's
+and Type as I speak's, the two switches it replaced): **Off**, **In bar** (the default)
+or **Into field**. **In bar**: the full keyboard's keys go and the words so far take their place
 under the recording bar (`LiveDictationPreviewView`), the settled words in the keys'
 ink and the tail the recogniser may still change muted, the newest line in view with
 whole lines above it. It takes every touch where the keys were, so nothing types while
@@ -269,8 +274,11 @@ fade drifting 6 pt up (0.15 s) as the keys come back (0.3 s), and they stop taki
 at once; the field gets the dictation's own text, with its style, clean-up,
 punctuation, held results and Undo dictation as before, so it can differ from the
 preview: with the speech model in keyboard (Parakeet, English's default) the preview's
-words are Apple's and the text Parakeet's ("10" can go in as "ten"). **Type as I speak**
-(off by default): the words are typed into the field as they come
+words are Apple's and the text Parakeet's ("10" can go in as "ten"). The words on screen
+are never what goes in: ✓ (or a tap on the words) while some are still muted throws none
+of what was said away, since the recogniser is stopped and the whole recording is read
+again for the text. **Into field**:
+the words are typed into the field as they come
 (`LiveFieldTyping`), only the changed tail retyped. It keeps exactly what it typed and
 edits only while the text before the cursor still ends with it; when the dictation's
 text goes in, its words come out first, so the text goes in where and as it would without
@@ -289,12 +297,16 @@ the moment the field first read empty (held meanwhile, every chunk in exactly on
 dictation) starts a new dictation with its own file, live words from the first, final text
 at ✓, length and memory checks, so talk, Send, talk, Send works hands-free. An app that
 changes the words without emptying the field (an edit, a mention) still stops the typing. Never in secure, password, one-time code or card number fields, over a
-selection or a two-thumb Dictate's range, or with Translate what I say on. Neither runs
+selection or a two-thumb Dictate's range, in an app that reports no text, or with Translate
+what I say on; where it can't type a dictation for one of these, the words show over the keys
+instead, as In bar does, so Into field never shows nothing (`LiveDictationSettings.liveWords`;
+what is stored doesn't change). Both keys on (1.0.4's two switches together, until another
+choice is picked) types into the field and shows the words over the keys. Neither runs
 before iOS 26, for dictations recorded through Hex (Keep mic warm), when less than 32 MB
 is left once the capture runs (`KeyboardLiveDictation`: the recogniser's share in the
 keyboard with margin, and the speech model's transcription after it), on an error, or
 when the recogniser isn't running 4–6 s into the audio; under 24 MB, or on a memory warning, the recogniser goes
-and the dictation goes on. The dictation bar shows no preview (Type as I speak works
+and the dictation goes on. The dictation bar shows no preview (Into field works
 there, unverified on an iPhone). On an iPhone 17 Pro (iOS 27.2, keyboard limit 177 MB,
 Parakeet loaded, a clip played from a Mac's speaker): the first words show about 1.2–1.3 s
 after speech starts (2 s after the capture's first audio; 2.1 s and 3 s on the first
@@ -415,7 +427,10 @@ more), and moving a legacy folder forgets the app's compile record for it
 (`ParakeetCompileRecord.forget`), so V2 says it's optimizing for this iPhone and Ultra
 gets ready beside the engine that dictates. The Settings › Dictation row says what it's doing: downloading,
 downloaded, getting ready in the keyboard, ready, or that the keyboard can't use it now
-(`KeyboardParakeetSettings.keyboardState`, written by the keyboard). Each dictation logs
+(`KeyboardParakeetSettings.keyboardState`, written by the keyboard). Dictating in another
+language than English, Hinglish included, it says "Only for English dictation." even once
+downloaded: Apple's speech recognition takes that dictation whatever the keyboard last wrote
+(build 147 said "Ready in the keyboard", which reads as Parakeet taking Hinglish). Each dictation logs
 its engine, the keyboard's limit, footprint before and at peak, load and transcription
 time to `keyboard-capture-probe.log`. Measured in Hex's keyboard on an iPhone 17 Pro
 (iOS 27.2, keyboard limit 177 MB) with the app force-quit: V2's first load 15.4 s, the
@@ -581,9 +596,14 @@ second time in a row (within 6 h, no model in place since) "Open Hex to download
 English.": Dictate and the Hex key then open Hex, which downloads it, until a model
 installs (in either process; Hex checks again each time it comes to the front), a
 language is chosen, or a day passes (`SpeechModelNeedsHex`,
-`settings.dictationLanguage.keyboardNeedsHex`); a move to another language keeps its
-own sentence. Coming back to Hex after it was in the background starts over a check
-that failed or never answered, and a check that gives up bumps its generation so a
+`settings.dictationLanguage.keyboardNeedsHex`). Only a language Hex itself set aside keeps
+its sentence in the keyboard ("Russian isn't available on this iPhone yet. Try English."): the
+keyboard sets nothing aside, and through TestFlight build 147 its own failed install of a
+language picked by hand on an English iPhone (Hebrew, Norwegian, German) said it wasn't
+available at every dictation and never went to Hex, which could download it. Every other
+failure is Hex's to download, Hebrew included (`SpeechModelNeedsHex.keyboardError`).
+Coming back to Hex after it was in the background starts over a check that failed or
+never answered, and a check that gives up bumps its generation so a
 late answer can't reopen the row (`KeyboardSpeechPreparation`). Reservations make room
 under `AssetInventory.maximumReservedLocales` by releasing others first. Only
 Hex's own error text reaches the app or keyboard (`HexDescribedError`); Apple's
@@ -621,7 +641,10 @@ Keyboard › Languages whose base language differs from it, mapped by the same r
 keyboard-follow language uses (`LanguageSettings.dictationLanguage(for:)`). Both must
 resolve to `SpeechTranscriber`, and the second language's model must already be installed
 (`AssetInventory.status`): dictation never downloads for it, and a language whose
-`SpeechTranscriber` model was set aside as failing is skipped. Two `SpeechAnalyzer`s
+`SpeechTranscriber` model was set aside as failing is skipped. So the switch does
+nothing for a language Apple reads only with `DictationTranscriber` (on macOS 27.2.1
+`SpeechTranscriber` lists 45 locales, without Ukrainian, Czech, Polish, Russian, Hebrew
+or Dutch), on either side of the pair. Two `SpeechAnalyzer`s
 read the same WAV, each with its own `AVAudioFile`, prepared with
 `prepareToAnalyze(in: nil)` before starting, and a `SpeechTranscriber(locale:`,
 `transcriptionOptions: [], reportingOptions: [],`
@@ -630,7 +653,12 @@ vocabulary's contextual strings. Each final result's timed runs give the merge i
 (the run's own characters, leading whitespace included, start, end, confidence), and a
 run without letters or without a time range keeps its characters on the word before it.
 `TwoLanguageMerger` cuts both readings at the earlier of two word ends within 150 ms,
-scores each reading in a segment by its confidence-weighted seconds clipped to the
+and at any word end of one reading that no word of the other spans (more than 150 ms
+either side): where the language really changes, the reading that can't follow it hears
+a few long garbled words or none, so the two rarely end a word together there, and
+without those cuts the speech on both sides of the change fell in one piece and one
+language's words were dropped (an English-then-Chinese clip lost its last 6 s of
+English). It scores each reading in a segment by its confidence-weighted seconds clipped to the
 segment, and picks a reading per segment with a two-state Viterbi that charges 0.35 s of
 confident audio for each language change, ties going to the primary. A word the new
 reading starts with is dropped only when it repeats the last word kept, case and
@@ -758,6 +786,36 @@ public way to keep the screen on.
   comes back there within 30 s, and is offered as Paste dictation
   anywhere else or later. A capture that goes quiet for 6 s finishes with
   what it heard, and a transcription stuck for 2 minutes is given up.
+- ✓, a tap on the live words or a push-to-talk release keeps what was said up to
+  the tap. The capture page hands its audio over 4,096 samples (85 ms at 48 kHz)
+  at a time, and its stop used to drop the part-filled buffer, so the recording
+  ended 50–110 ms before the finger lifted (TestFlight build 147 and App Store
+  1.0.4, Live words on or off, simulator); a tap as the last syllable still
+  sounded could lose its end. The stop now waits for that buffer (at most 85 ms,
+  250 ms for a context that went quiet) before it lets the microphone go, so the
+  spinner shows that much later; a start meanwhile waits for it. The keyboard
+  hiding still finishes at once.
+- An in-keyboard capture that another sound interrupts waits for it instead
+  of ending: a notification, an alarm or a call takes the audio session, and
+  WebKit interrupts or suspends the capture page's `AudioContext` and mutes
+  (or, if its capture fails, ends) the microphone track. The page reports each
+  `mute`, `unmute` and `ended` of its track and each `statechange` of its
+  context, with its time, and the keyboard writes every one to the probe log
+  (`page statechange at +4.2 s: context interrupted, track muted`). Every
+  250 ms the page resumes a context that isn't running, then opens the
+  microphone again for a track that ended or stayed muted for 3 s (again
+  after 1, 2, 4 and then every 8 s), into the same context and capture: the
+  same dictation goes on, with its file, live words and Type as I speak, and
+  the time away is missing audio. While the page says it's interrupted, the
+  6 s quiet rule doesn't count, and quiet counts again from when it's back
+  (`KeyboardCaptureWatch`). Interrupted for more than 15 s
+  (`KeyboardJobWatchdog.captureInterruption`: a call, an alarm), it
+  finishes with what was said, as before. In the simulator, which has no
+  microphone and no interruptions, `capture-debug.js` left in the App Group
+  runs once in the capture page (to stand a recording in for the microphone,
+  or suspend the context, mute or stop the track by hand), and each recording
+  is kept there as `capture-debug.wav`. What iOS sends a capture for a
+  notification on a phone, with the ringer on and on silent, is unverified.
 - Phone/FaceTime/Siri audio interruptions finalize captures `>= 300 ms` so
   spoken words are not lost, cancel shorter taps cleanly out of `Listening`,
   and resume warm keepalive when iOS signals `.shouldResume`. Hex's own

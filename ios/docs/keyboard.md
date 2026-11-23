@@ -12,6 +12,10 @@ Dictation itself is in [dictation.md](dictation.md).
 A tap, or a
 still hold of 0.35 s, starts dictation: in a warm session, else inside
 the keyboard (in-keyboard dictation, iOS 26+), else by opening Hex.
+In-keyboard dictation uses the keyboard's own speech model, so it also
+dictates while Hex's isn't ready (a first download, Continue without a
+model, a failed preparation); only without it does the Hex key open Hex
+to finish setup (`DictationRoute`).
 In-keyboard dictation listens from touch-down, so a tap's or hold's first
 words are kept; moving
 more than 10 pt first opens the style menu, dropping that capture; releasing over a row picks it, and releasing elsewhere leaves
@@ -61,7 +65,8 @@ keeps its suggestions. On a number pad, or with only Apple's keyboards
 beside Hex, it switches to the next keyboard; elsewhere (Emoji or another
 third-party keyboard on, where that switch lands on them about half the
 time) a tap opens iOS's keyboard list, as the globe's hold does, to pick
-Apple's. It needs no Full Access, which only Paste does. When iOS prompts
+Apple's. Where Apple's keyboard is split (the Duo unfolded and upright, where the
+switch can end the app) it always opens the list. It needs no Full Access, which only Paste does. When iOS prompts
 Allow Paste (read ≥ 0.3 s) or refuses a paste read, the strip shows a
 tappable two-line notice (`Paste without asking` / `Paste from Other Apps ›
 Allow` with a **Settings** chip that routes through
@@ -868,6 +873,16 @@ stays after Delete. With no words offered, tapping the left slot to keep what yo
 mid-word and holding a word to add it to Custom vocabulary are gone. Off, the strip suggests
 exactly as it did.
 
+A word that changes rolls to the new one, but only once the keyboard is on screen
+(`KeyboardStripView.appearing`, cleared by `FullKeyboardView.keyboardDidAppear` and set again
+by `prepareForField`). iOS hands the field's traits over as it brings the keyboard in, after
+the first words were chosen without them, so on every switch to Hex "the" became "The" and
+"I'm" became "I’m" in a roll the person saw (iPhone and iPad, iOS 26.5 and 27.2 simulators);
+changes before then just show. One frame of the switch is iOS's: on iOS 26 (26.5 simulator,
+iPhone and iPad mini) it sizes every third-party keyboard's view taller for about 25 ms as it
+switches in (448 pt for a 353 pt keyboard on an iPad mini), with the same frame in a keyboard
+that is a plain grey view; iOS 27.2 doesn't.
+
 ## Background (full keyboard and dictation bar)
 
 Hex draws nothing behind its keys, so
@@ -1023,7 +1038,21 @@ the field shares (the body font's own widths, rows wrapped at the keyboard's wid
 40 pt) and moves by the offset to the nearest position, a 👍🏽 in one step. The field shares
 only the cursor's sentence or line and a little before it, so at that text's edge the cursor
 waits for the host to show more, and past its first or last line it steps just past it in
-one move, which the host makes only if there's text there. The keys blank to keycaps 60%
+one move, which the host makes only if there's text there. A context unchanged since that
+step is the host ignoring it at the text's start or end, not the text past it: read as text,
+it was added again above the known text on every move (iPhone Duo simulator, a long note's
+first line: 3 rows grew to 245 in one gesture, and the lift moved the cursor 26,642
+characters). Safari's fields (WKWebView) answer a keyboard's moves with a context that never
+matches where the cursor went, so there the trackpad keeps to the text the field shared when
+the hold began, and past it the point waits (iOS 27.2 simulator: 20, 40 and 60 pt up all
+moved 2 lines, and coming back took up to two lines of travel). The rows are a guess: no
+context or callback shows where a field wraps (the context is the cursor's sentence in a
+UITextView and in WKWebView). Where the field is as wide as the keyboard less 40 pt, as a
+full-width text view on an iPhone, a row is a line and Hex moves as many lines as Apple's;
+where it's narrower, a row is more than a line and up and down skip lines (iOS 27.2
+simulator, 20 / 40 / 60 pt up: Apple's 1 / 2 / 3 lines, Hex's 2 / 5 / 7 in a field half the
+width; on the Duo's cover screen an app gets 382 pt of the 466 while the keyboard spans 452,
+so even a full-width field skips one going down). The keys blank to keycaps 60%
 of the way to the backdrop, as Apple's, with no haptic while it moves. Apple's second-finger
 tap to select text has no host counterpart: `UITextDocumentProxy` (iOS 27.2 SDK) can read the
 selection but not make one. Off (the default), a second finger does nothing. Settings ›
@@ -1154,7 +1183,14 @@ emoji for the text before the cursor, then a grid that scrolls sideways through
 Frequently used (eight columns: your emoji, then common ones) and the eight
 categories, at the system emoji keyboard's 46 pt pitch, with ABC, the categories and
 delete below, drawn without keycaps as the system's are; a tap anywhere under the
-grid goes to the key under it, each category the full width of its slot. With
+grid goes to the key under it, each category the full width of its slot. Every point
+of the panel takes a touch, between two emoji, between rows and beside a category icon
+too, and so does every point of the search's results row: iOS hands a keyboard only the
+touches that land on something its layers draw, so both have an invisible fill
+(`UIColor.keyboardTouchFill`, 0.1% black) under their clear look. Without it a finger
+landing between emoji reached nothing, so a swipe that began there did nothing and a
+glide couldn't be stopped or flung again (TestFlight build 147: "the animation in the
+emoji section is not cancelable"; iOS 27.2 simulator). With
 Settings › Experiments › ABC under the emoji key on (off by default,
 `experiments.emojiLettersUnderEmojiKey`, App Group), ABC sits exactly where the emoji
 key that opened the panel was, its x and width, so switching back to the letters needs
