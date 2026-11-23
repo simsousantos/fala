@@ -1,7 +1,7 @@
 name: HEXMobile
 options:
   minimumXcodeGenVersion: 2.46.0
-  bundleIdPrefix: anomaly.hex
+  bundleIdPrefix: com.simsousantos.fala
   deploymentTarget:
     iOS: "18.0"
   xcodeVersion: "2660"
@@ -11,7 +11,8 @@ packages:
     exactVersion: 0.15.5
 settings:
   base:
-    DEVELOPMENT_TEAM: 5NZ4Q7NXJ4
+    # Coloque aqui o seu Team ID (Xcode › Settings › Accounts). Vazio = escolher no Xcode.
+    DEVELOPMENT_TEAM: ""
     SWIFT_VERSION: 6.0
     # The compiler finds the interface's strings for the String Catalogs (Localizable.xcstrings).
     SWIFT_EMIT_LOC_STRINGS: YES
@@ -35,15 +36,15 @@ targets:
     info:
       path: HEXMobile/Info.plist
       properties:
-        CFBundleDisplayName: Hex
+        CFBundleDisplayName: Fala
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         CADisableMinimumFrameDurationOnPhone: true
         CFBundleURLTypes:
           - CFBundleTypeRole: Editor
-            CFBundleURLName: anomaly.hex.mobile.keyboard-session
+            CFBundleURLName: com.simsousantos.fala.mobile.keyboard-session
             CFBundleURLSchemes:
-              - hex-dictation
+              - fala-dictation
         NSMicrophoneUsageDescription: Hex turns what you say into text on this iPhone. Audio never leaves it and is deleted once it's transcribed.
         NSSpeechRecognitionUsageDescription: Hex uses Apple's on-device speech recognition to turn what you say into text. Nothing you say is sent to a server.
         NSSupportsLiveActivities: true
@@ -73,7 +74,7 @@ targets:
         TARGETED_DEVICE_FAMILY: "1"
         OTHER_LDFLAGS: $(inherited) -weak_framework FoundationModels
         OTHER_SWIFT_FLAGS: $(inherited) -Xfrontend -disable-autolink-framework -Xfrontend FoundationModels
-        PRODUCT_BUNDLE_IDENTIFIER: anomaly.hex.mobile
+        PRODUCT_BUNDLE_IDENTIFIER: com.simsousantos.fala.mobile
         PRODUCT_NAME: HEX
     scheme:
       gatherCoverageData: false
@@ -94,7 +95,7 @@ targets:
     info:
       path: HEXKeyboard/Info.plist
       properties:
-        CFBundleDisplayName: Hex Keyboard
+        CFBundleDisplayName: Fala Teclado
         NSMicrophoneUsageDescription: Hex turns what you say into text on this iPhone. Audio never leaves it and is deleted once it's transcribed.
         NSSpeechRecognitionUsageDescription: Hex uses Apple's on-device speech recognition to turn what you say into text. Nothing you say is sent to a server.
         CFBundleShortVersionString: $(MARKETING_VERSION)
@@ -117,7 +118,7 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: 9.0.0
         TARGETED_DEVICE_FAMILY: "1"
-        PRODUCT_BUNDLE_IDENTIFIER: anomaly.hex.mobile.keyboard
+        PRODUCT_BUNDLE_IDENTIFIER: com.simsousantos.fala.mobile.keyboard
         PRODUCT_NAME: HEXKeyboard
         SKIP_INSTALL: YES
   HEXWidgets:
@@ -130,7 +131,7 @@ targets:
     info:
       path: HEXWidgets/Info.plist
       properties:
-        CFBundleDisplayName: Hex
+        CFBundleDisplayName: Fala
         CFBundleShortVersionString: $(MARKETING_VERSION)
         CFBundleVersion: $(CURRENT_PROJECT_VERSION)
         NSExtension:
@@ -143,7 +144,7 @@ targets:
         GENERATE_INFOPLIST_FILE: NO
         MARKETING_VERSION: 9.0.0
         TARGETED_DEVICE_FAMILY: "1"
-        PRODUCT_BUNDLE_IDENTIFIER: anomaly.hex.mobile.widgets
+        PRODUCT_BUNDLE_IDENTIFIER: com.simsousantos.fala.mobile.widgets
         PRODUCT_NAME: HEXWidgets
         SKIP_INSTALL: YES
   HEXMobileTests:
@@ -160,5 +161,5 @@ targets:
         BUNDLE_LOADER: $(TEST_HOST)
         CODE_SIGN_STYLE: Automatic
         GENERATE_INFOPLIST_FILE: YES
-        PRODUCT_BUNDLE_IDENTIFIER: anomaly.hex.mobile.tests
+        PRODUCT_BUNDLE_IDENTIFIER: com.simsousantos.fala.mobile.tests
         TEST_HOST: $(BUILT_PRODUCTS_DIR)/HEX.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/HEX

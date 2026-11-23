@@ -42,7 +42,7 @@ final class SwipeTyping {
     private var previewInFlight = false
     private var lastPreviewAt: TimeInterval = 0
     /// Decodes while the finger moves, for the strip, off the main thread.
-    private static let previewQueue = DispatchQueue(label: "anomaly.hex.swipe-preview", qos: .userInitiated)
+    private static let previewQueue = DispatchQueue(label: "com.simsousantos.fala.swipe-preview", qos: .userInitiated)
     static let previewInterval: TimeInterval = 0.07
     /// Your own words (`AutocorrectEngine.ownWords`) as the decoder has them.
     private var ownWordsRevision: Int?

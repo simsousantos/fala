@@ -21,7 +21,7 @@ xcrun simctl boot "$SIM_UDID" 2>/dev/null
 xcrun simctl bootstatus "$SIM_UDID" -b >/dev/null
 xcrun simctl status_bar "$SIM_UDID" override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3 2>/dev/null
 xcrun simctl install "$SIM_UDID" "$app" || exit 69
-bundle=anomaly.hex.mobile
+bundle=com.simsousantos.fala.mobile
 docs="$(xcrun simctl get_app_container "$SIM_UDID" $bundle data)/Documents"
 
 run() { # name seconds args...

@@ -16,7 +16,7 @@ nonisolated struct KeyboardParakeetSettings {
     static let keyboardStateMultilingualKey = "experiments.keyboardParakeet.keyboardStateMultilingual"
     /// The keyboard's memory limit on this iPhone, as the keyboard measured it.
     static let keyboardLimitKey = "experiments.keyboardParakeet.keyboardLimit"
-    static let keyboardLimitNotification = "anomaly.hex.keyboardParakeet.keyboardLimit"
+    static let keyboardLimitNotification = "com.simsousantos.fala.keyboardParakeet.keyboardLimit"
     static let launchArgument = "--experiment-keyboard-parakeet"
 
     /// What the keyboard did with the model, written by the keyboard.
@@ -121,7 +121,7 @@ nonisolated struct KeyboardParakeetNotice {
     static let maximumShowings = 3
     /// Opens Hex as it is, starting nothing (Home when it wasn't running), where the model
     /// downloads by itself on Wi-Fi.
-    static let opensHex = URL(string: "hex-dictation://keyboard")!
+    static let opensHex = URL(string: "fala-dictation://keyboard")!
 
     private let defaults: UserDefaults?
 

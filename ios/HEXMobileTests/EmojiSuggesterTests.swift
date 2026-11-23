@@ -165,7 +165,7 @@ final class EmojiSuggesterTests: XCTestCase {
     /// puts in or your own words, never while space would put in another word, and only in a
     /// field that takes emoji.
     func testTheStripOffersTheEmojiOfTheWordBeingTyped() throws {
-        let suite = "anomaly.hex.tests.emoji-typed"
+        let suite = "com.simsousantos.fala.tests.emoji-typed"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defaults.removePersistentDomain(forName: suite)
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -225,7 +225,7 @@ final class EmojiSuggesterTests: XCTestCase {
     // MARK: - History
 
     func testHistoryFadesByHalfEveryTenDaysAndKeepsTones() throws {
-        let suite = "anomaly.hex.tests.emoji"
+        let suite = "com.simsousantos.fala.tests.emoji"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defaults.removePersistentDomain(forName: suite)
         var now = Date(timeIntervalSince1970: 1_000_000)
@@ -344,7 +344,7 @@ final class EmojiSuggesterTests: XCTestCase {
 
     func testTheGridShowsTheSkinToneYouPicked() throws {
         let library = try library()
-        let suite = "anomaly.hex.tests.emoji-grid"
+        let suite = "com.simsousantos.fala.tests.emoji-grid"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defaults.removePersistentDomain(forName: suite)
         let usage = EmojiUsageStore(defaults: defaults)
@@ -367,7 +367,7 @@ final class EmojiSuggesterTests: XCTestCase {
     /// under the grid, each category across the full width of its slot.
     func testTheBarsKeysTakeTheWholeBandUnderTheGrid() throws {
         let library = try library()
-        let panel = EmojiPanelView(library: library, usage: EmojiUsageStore(defaults: UserDefaults(suiteName: "anomaly.hex.tests.emoji-band")))
+        let panel = EmojiPanelView(library: library, usage: EmojiUsageStore(defaults: UserDefaults(suiteName: "com.simsousantos.fala.tests.emoji-band")))
         panel.frame = CGRect(x: 0, y: 0, width: 402, height: 300)
         panel.show(suggestions: [], frequent: [])
         panel.layoutIfNeeded()
@@ -399,7 +399,7 @@ final class EmojiSuggesterTests: XCTestCase {
     /// grid when it scrolls by hand.
     func testSlidingAlongTheBarScrubsTheGrid() throws {
         let library = try library()
-        let panel = EmojiPanelView(library: library, usage: EmojiUsageStore(defaults: UserDefaults(suiteName: "anomaly.hex.tests.emoji-scrub")))
+        let panel = EmojiPanelView(library: library, usage: EmojiUsageStore(defaults: UserDefaults(suiteName: "com.simsousantos.fala.tests.emoji-scrub")))
         panel.frame = CGRect(x: 0, y: 0, width: 402, height: 300)
         panel.show(suggestions: [], frequent: [])
         panel.layoutIfNeeded()

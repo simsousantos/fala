@@ -71,7 +71,7 @@ nonisolated final class CleanupTagger: @unchecked Sendable {
     }
 
     /// Owns `loaded`: every load, prediction, and release runs here, one at a time.
-    private let queue = DispatchQueue(label: "anomaly.hex.cleanup-tagger", qos: .userInitiated)
+    private let queue = DispatchQueue(label: "com.simsousantos.fala.cleanup-tagger", qos: .userInitiated)
     private let computeUnits: MLComputeUnits
     private var loaded: Loaded?
     private var memoryWarningObserver: NSObjectProtocol?

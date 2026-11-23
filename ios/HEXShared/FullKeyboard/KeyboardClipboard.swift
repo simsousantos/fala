@@ -6,7 +6,7 @@ import UIKit
 ///
 /// iOS asks "Allow Paste" for every read while Settings › Apps › Hex › Paste from Other Apps
 /// is Ask, its default. The keyboard's reads count as Hex's own: on the simulator, pasted
-/// looks up the keyboard's identity as `anomaly.hex.mobile`, a keyboard read alone makes the
+/// looks up the keyboard's identity as `com.simsousantos.fala.mobile`, a keyboard read alone makes the
 /// row appear under Hex, and with Allow the chip pastes without asking. `UIPasteControl`
 /// (which never asks) draws blank in a keyboard, and `detectPatterns` can't give the text,
 /// so the strip points to that setting after a paste that asked or was refused.

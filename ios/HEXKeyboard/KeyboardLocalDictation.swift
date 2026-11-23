@@ -80,7 +80,7 @@ final class KeyboardLocalDictation {
     private var startPending: String?
     /// After a capture ends, long enough for WebKit to have let its audio session go.
     static let resumeOtherAudioDelay: TimeInterval = 0.5
-    private static let audioSessionQueue = DispatchQueue(label: "anomaly.hex.keyboard.audio-session", qos: .userInitiated)
+    private static let audioSessionQueue = DispatchQueue(label: "com.simsousantos.fala.keyboard.audio-session", qos: .userInitiated)
 
     /// Keyboard dictation sets this process's audio session to record (WebKit captures for
     /// it), and iOS mutes a recording session's haptics by default: key haptics stay on. Set
@@ -1342,7 +1342,7 @@ enum KeyboardSpeech {
 final class KeyboardProbeLog: @unchecked Sendable {
     static let shared = KeyboardProbeLog()
 
-    private let logger = Logger(subsystem: "anomaly.hex.mobile.keyboard", category: "capture-probe")
+    private let logger = Logger(subsystem: "com.simsousantos.fala.mobile.keyboard", category: "capture-probe")
     private let lock = NSLock()
     private let url = FileManager.default
         .containerURL(forSecurityApplicationGroupIdentifier: KeyboardBridge.appGroup)?

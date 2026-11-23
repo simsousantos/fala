@@ -27,7 +27,7 @@ nonisolated final class TypingLogStore: @unchecked Sendable {
     let directory: URL?
     let cap: Int
     private let calendar: Calendar
-    private let queue = DispatchQueue(label: "anomaly.hex.typing-log.writer", qos: .utility)
+    private let queue = DispatchQueue(label: "com.simsousantos.fala.typing-log.writer", qos: .utility)
 
     private struct OpenFile {
         let day: String

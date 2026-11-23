@@ -771,7 +771,7 @@ final class LiveDictationTests: XCTestCase {
     }
 
     func testTheSwitchesDefaultToShowingButNotTyping() throws {
-        let suite = "anomaly.hex.tests.live-dictation"
+        let suite = "com.simsousantos.fala.tests.live-dictation"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defaults.removePersistentDomain(forName: suite)
         let settings = LiveDictationSettings(defaults: defaults)

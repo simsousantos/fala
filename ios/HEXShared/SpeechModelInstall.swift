@@ -234,7 +234,7 @@ nonisolated enum SpeechModelInstall {
             monitor.pathUpdateHandler = { path in
                 if once.claim() { continuation.resume(returning: path.status) }
             }
-            monitor.start(queue: DispatchQueue(label: "anomaly.hex.speech.path"))
+            monitor.start(queue: DispatchQueue(label: "com.simsousantos.fala.speech.path"))
         }
         return status == .satisfied
     }

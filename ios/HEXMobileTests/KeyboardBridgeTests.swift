@@ -277,7 +277,7 @@ final class KeyboardBridgeTests: XCTestCase {
         XCTAssertEqual(KeyboardLaunchRequest(url: request.url), request)
         // A keyboard from before the return-app setting went away may still send `return=`.
         XCTAssertEqual(
-            KeyboardLaunchRequest(url: URL(string: "hex-dictation://keyboard/start?ts=100&return=messages")!),
+            KeyboardLaunchRequest(url: URL(string: "fala-dictation://keyboard/start?ts=100&return=messages")!),
             request
         )
     }
@@ -306,7 +306,7 @@ final class KeyboardBridgeTests: XCTestCase {
 
     func testPasteSettingsLaunchOpensAPageWithoutAHandoff() {
         let request = KeyboardLaunchRequest.pasteSettings
-        XCTAssertEqual(request.url.absoluteString, "hex-dictation://keyboard/paste-settings")
+        XCTAssertEqual(request.url.absoluteString, "fala-dictation://keyboard/paste-settings")
         XCTAssertEqual(KeyboardLaunchRequest(url: request.url), request)
         XCTAssertTrue(request.opensPage)
         XCTAssertNil(request.requestedAt)
@@ -315,7 +315,7 @@ final class KeyboardBridgeTests: XCTestCase {
 
     func testTranslationSettingsLaunchOpensAPageWithoutAHandoff() {
         let request = KeyboardLaunchRequest.translationSettings
-        XCTAssertEqual(request.url.absoluteString, "hex-dictation://keyboard/translation")
+        XCTAssertEqual(request.url.absoluteString, "fala-dictation://keyboard/translation")
         XCTAssertEqual(KeyboardLaunchRequest(url: request.url), request)
         XCTAssertTrue(request.opensPage)
         XCTAssertFalse(KeyboardLaunchRequest.startSession(requestedAt: nil).opensPage)
@@ -323,7 +323,7 @@ final class KeyboardBridgeTests: XCTestCase {
 
     func testKeyboardSetupLaunchRoundTripsWithoutAHandoff() {
         let request = KeyboardLaunchRequest.setup
-        XCTAssertEqual(request.url.absoluteString, "hex-dictation://keyboard/setup")
+        XCTAssertEqual(request.url.absoluteString, "fala-dictation://keyboard/setup")
         XCTAssertEqual(KeyboardLaunchRequest(url: request.url), request)
         XCTAssertFalse(request.isHandoffExpired(at: 1_000_000))
     }
@@ -493,7 +493,7 @@ final class KeyboardBridgeTests: XCTestCase {
     }
 
     func testKeyboardRecordingLaunchRequiresAJob() {
-        let url = URL(string: "hex-dictation://keyboard/record")!
+        let url = URL(string: "fala-dictation://keyboard/record")!
         XCTAssertNil(KeyboardLaunchRequest(url: url))
     }
 
@@ -896,7 +896,7 @@ final class KeyboardBridgeTests: XCTestCase {
     /// The keyboard's New speech model notice: only where the keyboard would dictate with Hex's
     /// model and it isn't downloaded, at most once a day and three times, never after Open Hex.
     func testTheNewSpeechModelNoticeShowsOnlyWhereItHelpsAndNotOften() throws {
-        let suite = "anomaly.hex.tests.model-notice"
+        let suite = "com.simsousantos.fala.tests.model-notice"
         for name in [suite, suite + ".unmeasured", suite + ".small", suite + ".opened"] {
             UserDefaults(suiteName: name)?.removePersistentDomain(forName: name)
         }

@@ -35,7 +35,7 @@ final class KeyboardViewController: UIInputViewController {
             NotificationCenter.default.post(name: onScreenDidChange, object: nil)
         }
     }
-    private static let onScreenDidChange = Notification.Name("anomaly.hex.mobile.keyboard.onScreenDidChange")
+    private static let onScreenDidChange = Notification.Name("com.simsousantos.fala.mobile.keyboard.onScreenDidChange")
     private final class WeakInputView {
         weak var view: KeyboardInputView?
         init(_ view: KeyboardInputView) { self.view = view }

@@ -539,8 +539,8 @@ private struct FullKeyboardFixture: UIViewRepresentable {
 @MainActor
 enum EmojiFixture {
     static func usage() -> EmojiUsageStore {
-        let defaults = UserDefaults(suiteName: "anomaly.hex.fixture.emoji")
-        defaults?.removePersistentDomain(forName: "anomaly.hex.fixture.emoji")
+        let defaults = UserDefaults(suiteName: "com.simsousantos.fala.fixture.emoji")
+        defaults?.removePersistentDomain(forName: "com.simsousantos.fala.fixture.emoji")
         let store = EmojiUsageStore(defaults: defaults)
         for (emoji, times) in [("😂", 6), ("❤️", 5), ("👍", 4), ("🙏", 3), ("🔥", 3), ("😭", 2), ("🥹", 2), ("☕", 1)] {
             for _ in 0..<times { store.record(emoji) }

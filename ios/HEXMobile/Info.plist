@@ -7,7 +7,7 @@
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
-	<string>Hex</string>
+	<string>Fala</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
 	<key>CFBundleIdentifier</key>
@@ -26,10 +26,10 @@
 			<key>CFBundleTypeRole</key>
 			<string>Editor</string>
 			<key>CFBundleURLName</key>
-			<string>anomaly.hex.mobile.keyboard-session</string>
+			<string>com.simsousantos.fala.mobile.keyboard-session</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
-				<string>hex-dictation</string>
+				<string>fala-dictation</string>
 			</array>
 		</dict>
 	</array>

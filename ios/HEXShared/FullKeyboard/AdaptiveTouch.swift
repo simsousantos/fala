@@ -519,7 +519,7 @@ final class AdaptiveTouch {
     private var gainHead = [Int](repeating: 0, count: AdaptiveTouchModel.contextLimit)
     private var unsaved = 0
     private var offsetsCache: (geometry: UInt64, version: Int, offsets: [Character: CGVector])?
-    private static let writer = DispatchQueue(label: "anomaly.hex.adaptive-touch.writer", qos: .utility)
+    private static let writer = DispatchQueue(label: "com.simsousantos.fala.adaptive-touch.writer", qos: .utility)
 
     init(storage: Storage, settings: AdaptiveTouchSettings = AdaptiveTouchSettings()) {
         self.storage = storage

@@ -90,7 +90,7 @@ nonisolated enum KeyboardLaunchRequest: Equatable, Sendable {
     )
 
     init?(url: URL) {
-        guard url.scheme == "hex-dictation", url.host == "keyboard" else { return nil }
+        guard url.scheme == "fala-dictation", url.host == "keyboard" else { return nil }
         let components = URLComponents(url: url, resolvingAgainstBaseURL: false)
         let query = components?.queryItems ?? []
 
@@ -149,7 +149,7 @@ nonisolated enum KeyboardLaunchRequest: Equatable, Sendable {
 
     var url: URL {
         var components = URLComponents()
-        components.scheme = "hex-dictation"
+        components.scheme = "fala-dictation"
         components.host = "keyboard"
 
         var items: [URLQueryItem] = []
@@ -469,9 +469,9 @@ nonisolated enum KeyboardFullAccess: Equatable, Sendable {
 
 @MainActor
 struct KeyboardBridge {
-    nonisolated static let appGroup = "group.anomaly.hex.mobile"
+    nonisolated static let appGroup = "group.com.simsousantos.fala.mobile"
     /// Posted by the keyboard each time it reports Full Access (`recordFullAccess`).
-    nonisolated static let fullAccessDarwinNotification = "anomaly.hex.mobile.keyboard.fullAccess"
+    nonisolated static let fullAccessDarwinNotification = "com.simsousantos.fala.mobile.keyboard.fullAccess"
     /// The keyboard's Darwin notification, forwarded on the main thread once
     /// `forwardFullAccessReports()` has run in the app.
     nonisolated static let fullAccessReported = Notification.Name("KeyboardBridge.fullAccessReported")
