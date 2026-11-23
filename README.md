@@ -49,7 +49,11 @@ O esquema de URL foi trocado para não conflitar com o Hex oficial instalado no 
 
 ## Deslizar entre as letras em português
 
-O Hex só desliza em inglês e espanhol (e, em modo experimental, francês, polonês e alemão), porque cada idioma precisa de um modelo de digitação (`.hextm`) feito com o Google Books, que não tem português. O Fala traz o seu próprio `ios/HEXKeyboard/TypingModel/pt.hextm`, gerado por `ios/scripts/build-pt-typing-model.py` a partir de legendas brasileiras (OpenSubtitles 2018, via OPUS) e notícias (Leipzig Corpora Collection, `por_news_2020_1M`, CC BY), com as palavras conferidas no dicionário pt_BR do LibreOffice (VERO). Em português, o modelo serve só para o deslizar; o corretor automático continua o do iOS.
+O Hex só desliza em inglês e espanhol (e, em modo experimental, francês, polonês e alemão), porque cada idioma precisa de um modelo de digitação (`.hextm`) feito com o Google Books, que não tem português. O Fala traz o seu próprio `ios/HEXKeyboard/TypingModel/pt.hextm`, gerado por `ios/scripts/build-pt-typing-model.py` a partir de legendas brasileiras (OpenSubtitles 2018, via OPUS) e notícias (Leipzig Corpora Collection, `por_news_2020_1M`, CC BY), com as palavras conferidas no dicionário pt_BR do LibreOffice (VERO). O mesmo modelo lê os toques na autocorreção (como o Hex faz em inglês e espanhol); o dicionário do iOS continua dizendo se uma palavra existe.
+
+## Limpeza do ditado em português
+
+Com "Clean up what I say" ligado (padrão), o ditado em português perde as hesitações ("éé", "ahn", "hum", "hmm") e os vícios entre vírgulas ("Eu, tipo, fui" → "Eu fui"; "tipo", "né", "sabe", "assim"), e uma correção falada fica só com a versão certa ("às 3, digo, às 4" → "às 4"; também "quer dizer", "não", "ou melhor"). São regras de palavras, como as do Hex para espanhol (`SpokenCleanupRules.portuguese`): "amanhã, né?" e "esse tipo de coisa" ficam como foram ditos.
 
 ## Português e inglês ao mesmo tempo
 

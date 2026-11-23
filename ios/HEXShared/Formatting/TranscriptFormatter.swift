@@ -283,6 +283,10 @@ nonisolated enum TranscriptFormatter {
             return "e+h+m*|e+m+|m{2,}|hm+"
         case "de":
             return "ä+h+m*|ö+h+m*|hm+"
+        case "pt":
+            // Fala: "éé", "ehh", "ãh", "ahn", "hum", "hmm", "uhm". A lone "é" is a word ("é
+            // isso") and stays, as do "ah" and "aham".
+            return "é{2,}|e+h+m*|ã+h*n*|a+h+n+|hu+m+|h+m+|u+h+m*"
         default:
             return nil
         }

@@ -102,6 +102,10 @@ extension FullKeyboardView {
         functionButton.showsMenuAsPrimaryAction = true
         functionButton.preferredMenuElementOrder = .fixed
         functionButton.menu = makeFunctionMenu()
+        // Apple Intelligence loads while the finger is still on ⚡ or the formal shortcut.
+        for button in [functionButton, functionFormalButton] {
+            button.addAction(UIAction { _ in FalaTextTools.prewarm() }, for: [.touchDown, .menuActionTriggered])
+        }
 
         functionTranslateButton.symbolName = "translate"
         functionTranslateButton.accessibilityLabel = "Traduzir"

@@ -76,6 +76,23 @@ enum FalaTextTools {
 
     // MARK: Apple Intelligence
 
+    /// Sessions already warmed for each set of instructions (`prewarm()`), each used once.
+    /// `Any` so the stored property needs no iOS 26 availability.
+    private static var warm: [String: Any] = [:]
+
+    /// Fala: loads Apple Intelligence's model before an action is chosen (when the ⚡ is
+    /// touched), so the first rewrite starts at once instead of after the model loads.
+    static func prewarm() {
+        #if canImport(FoundationModels)
+        guard #available(iOS 26.0, *), case .available = SystemLanguageModel.default.availability else { return }
+        for instructions in [rewriteInstructions, formalInstructions] where warm[instructions] == nil {
+            let session = LanguageModelSession(model: .default, instructions: instructions)
+            session.prewarm()
+            warm[instructions] = session
+        }
+        #endif
+    }
+
     static let rewriteInstructions = """
         Você reescreve o texto que recebe para que fique claro, natural e bem escrito, \
         corrigindo erros de digitação, gramática e pontuação. Mantenha o mesmo idioma, o \
@@ -105,7 +122,8 @@ enum FalaTextTools {
         case .unavailable:
             return .failed("Apple Intelligence indisponível neste iPhone")
         }
-        let session = LanguageModelSession(model: .default, instructions: instructions)
+        let session = warm.removeValue(forKey: instructions) as? LanguageModelSession
+            ?? LanguageModelSession(model: .default, instructions: instructions)
         do {
             let content = try await session.respond(
                 to: text,

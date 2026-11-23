@@ -174,17 +174,17 @@ struct FullKeyboardSettings {
     /// until it is chosen; `TypingDecoderModel.bundled` still loads any bundled file for tests.
     func typingModel(for language: KeyboardLanguage) -> TypingDecoderModel? {
         if language == .german, !(spatialAutocorrect && germanSpatialAutocorrect) { return nil }
-        // Fala: Portuguese's model (pt.hextm) is for swipe typing only; its autocorrect keeps
-        // iOS's checker, as in Hex (`swipeModel(for:)`).
-        if language == .portuguese { return nil }
+        // Fala: Portuguese reads taps with its own model too (pt.hextm, built for Fala), as
+        // English and Spanish do. With no word list beside it (no pt.valid), iOS's dictionary
+        // still says whether a spelling is a word.
         return TypingDecoderModel.bundled(language.rawValue)
     }
 
-    /// Fala: the model a swipe reads. Portuguese (Brazil) has one built for Fala
-    /// (`scripts/build-pt-typing-model.py`) and swipes with it whatever the experiment says;
-    /// every other language reads its `typingModel(for:)`.
+    /// Fala: the model a swipe reads, the language's `typingModel(for:)`. Portuguese (Brazil)
+    /// has one built for Fala (`scripts/build-pt-typing-model.py`) and swipes with it whatever
+    /// the experiment says (`swipesIn(_:)`).
     func swipeModel(for language: KeyboardLanguage) -> TypingDecoderModel? {
-        language == .portuguese ? TypingDecoderModel.bundled(language.rawValue) : typingModel(for: language)
+        typingModel(for: language)
     }
 
     /// Whether a swipe reads `language`'s layout: English and Spanish as ever, and with

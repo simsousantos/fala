@@ -44,6 +44,7 @@ nonisolated enum SpokenCleanupRules {
         case "es": return spanish
         case "de": return german
         case "nb", "nn", "no": return norwegian
+        case "pt": return portuguese
         default: return nil
         }
     }
@@ -510,6 +511,27 @@ nonisolated enum SpokenCleanupRules {
         ],
         noComma: ["y", "o", "pero", "que", "a", "de", "en", "con", "para", "por", "el", "la", "los", "las",
                   "un", "una", "mi", "tu", "su", "porque", "si"]
+    )
+
+    /// Fala: Brazilian Portuguese. "tipo", "né", "sabe", "assim" go only when set off by commas
+    /// ("Eu, tipo, fui lá"), so a question tag ("amanhã, né?") and the words' own meanings
+    /// ("esse tipo de coisa", "assim que der") stay. "quer dizer" corrects only between commas:
+    /// without them it is a verb ("isso quer dizer que").
+    private static let portuguese = Rules(
+        fillers: [["tipo"], ["tipo", "assim"], ["né"], ["sabe"], ["assim"]],
+        markers: [["digo"], ["quer", "dizer"], ["não"], ["não", "espera"], ["perdão"], ["desculpa"],
+                  ["ou", "melhor"], ["melhor", "dizendo"]],
+        plainMarkers: [["ou", "melhor"], ["melhor", "dizendo"]],
+        kinds: [
+            ["dois", "duas", "três", "quatro", "cinco", "seis", "sete", "oito", "nove", "dez", "onze", "doze"],
+            ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"],
+            ["janeiro", "fevereiro", "março", "abril", "maio", "junho", "julho", "agosto", "setembro",
+             "outubro", "novembro", "dezembro"],
+            ["hoje", "amanhã", "ontem", "anteontem"],
+        ],
+        noComma: ["e", "ou", "mas", "que", "a", "o", "de", "em", "com", "para", "pra", "por", "os", "as",
+                  "um", "uma", "meu", "minha", "seu", "sua", "porque", "se", "no", "na", "do", "da", "eu",
+                  "é", "foi", "era", "tá", "está", "ficou", "muito", "bem"]
     )
 
     private static let german = Rules(

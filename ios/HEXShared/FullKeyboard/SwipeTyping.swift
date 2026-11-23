@@ -84,15 +84,26 @@ final class SwipeTyping {
         var fromPartner: Bool
     }
 
-    /// Both models' readings of a path, best first, each word once.
+    /// Both models' readings of a path, best first, each word once. The two decode side by
+    /// side on two cores, so reading both takes about as long as reading one (the models are
+    /// memory-mapped and read-only, and each decoder works on its own copy).
     nonisolated static func decode(
         _ decoder: SwipeDecoder, partner: SwipeDecoder?, _ points: [CGPoint], times: [TimeInterval],
         keys: TypingDecoder.Keys, previous: String?, limit: Int
     ) -> [Reading] {
-        var readings = decoder.decode(points, times: times, keys: keys, previous: previous, limit: limit)
-            .map { Reading(candidate: $0, fromPartner: false) }
-        guard let partner else { return readings }
-        for var candidate in partner.decode(points, times: times, keys: keys, previous: previous, limit: limit) {
+        guard let partner else {
+            return decoder.decode(points, times: times, keys: keys, previous: previous, limit: limit)
+                .map { Reading(candidate: $0, fromPartner: false) }
+        }
+        var both: [[SwipeDecoder.Candidate]] = [[], []]
+        both.withUnsafeMutableBufferPointer { buffer in
+            nonisolated(unsafe) let results = buffer
+            DispatchQueue.concurrentPerform(iterations: 2) { i in
+                results[i] = (i == 0 ? decoder : partner).decode(points, times: times, keys: keys, previous: previous, limit: limit)
+            }
+        }
+        var readings = both[0].map { Reading(candidate: $0, fromPartner: false) }
+        for var candidate in both[1] {
             candidate.cost += partnerCost
             if let same = readings.firstIndex(where: { $0.candidate.text == candidate.text }) {
                 if candidate.cost < readings[same].candidate.cost { readings[same] = Reading(candidate: candidate, fromPartner: true) }
@@ -360,6 +371,9 @@ final class SwipeTrailView: UIView {
     private var points: [(point: CGPoint, at: TimeInterval)] = []
     private var link: CADisplayLink?
     private var showing = false
+    /// Where the trail was last drawn: a redraw repaints only that and where it is now, not
+    /// the whole key plane.
+    private var drawn: CGRect = .null
 
     override init(frame: CGRect) {
         super.init(frame: frame)
@@ -398,13 +412,13 @@ final class SwipeTrailView: UIView {
             self.link = link
         }
         prune()
-        setNeedsDisplay()
+        invalidate()
     }
 
     func add(_ point: CGPoint) {
         points.append((point, clock()))
         prune()
-        setNeedsDisplay()
+        invalidate()
     }
 
     /// The finger lifted: the trail fades out where it is.
@@ -434,7 +448,7 @@ final class SwipeTrailView: UIView {
         showing = false
         layer.removeAnimation(forKey: "fade")
         layer.opacity = 1
-        setNeedsDisplay()
+        invalidate()
     }
 
     private func stopTicking() {
@@ -445,7 +459,17 @@ final class SwipeTrailView: UIView {
     /// While the finger rests the tail keeps shrinking toward it.
     @objc private func tick() {
         prune()
-        setNeedsDisplay()
+        invalidate()
+    }
+
+    /// Marks the old and the new trail's bounds for redrawing.
+    private func invalidate() {
+        var now = CGRect.null
+        for p in points { now = now.union(CGRect(origin: p.point, size: .zero)) }
+        if !now.isNull { now = now.insetBy(dx: -Self.width, dy: -Self.width) }
+        let dirty = drawn.union(now)
+        drawn = now
+        if !dirty.isNull { setNeedsDisplay(dirty) }
     }
 
     /// Points older than the tail drop off behind the finger, down to its last stretch.
