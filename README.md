@@ -51,6 +51,10 @@ O esquema de URL foi trocado para não conflitar com o Hex oficial instalado no 
 
 O Hex só desliza em inglês e espanhol (e, em modo experimental, francês, polonês e alemão), porque cada idioma precisa de um modelo de digitação (`.hextm`) feito com o Google Books, que não tem português. O Fala traz o seu próprio `ios/HEXKeyboard/TypingModel/pt.hextm`, gerado por `ios/scripts/build-pt-typing-model.py` a partir de legendas brasileiras (OpenSubtitles 2018, via OPUS) e notícias (Leipzig Corpora Collection, `por_news_2020_1M`, CC BY), com as palavras conferidas no dicionário pt_BR do LibreOffice (VERO). Em português, o modelo serve só para o deslizar; o corretor automático continua o do iOS.
 
+## Português e inglês ao mesmo tempo
+
+Escolha **Português** e **Inglês** em Ajustes › Teclado › Idiomas no app Fala. Como no teclado do iPhone, os dois viram um teclado bilíngue só, sem trocar de idioma: as teclas e os acentos são os do português, a barra de espaço mostra "EN PT" no canto, a autocorreção aceita palavras dos dois e o deslizar lê com os dois modelos (`pt.hextm` e `en.hextm`), com o inglês 1 nat mais caro para uma palavra que existe nos dois idiomas sair em português.
+
 ## Licença
 
 O código original é do Hex, © 2026 Christopher Langton, sob licença MIT (ver `LICENSE`). As licenças de terceiros estão em `THIRD_PARTY_NOTICES.md`.

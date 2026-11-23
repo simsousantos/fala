@@ -17,6 +17,11 @@ import UIKit
 @MainActor
 final class SwipeTyping {
     private(set) var decoder: SwipeDecoder
+    /// Fala: the bilingual keyboard's other language (English beside Portuguese): a swipe is
+    /// read with both models and their readings merged by cost, the partner's
+    /// `partnerCost` nats dearer so a word both languages have reads as the keyboard's own.
+    private(set) var partner: SwipeDecoder?
+    nonisolated static let partnerCost = 1.0
     private unowned let engine: FullKeyboardEngine
     /// The light trail behind the finger; the key plane holds it above its keys.
     let trail = SwipeTrailView()
@@ -67,6 +72,39 @@ final class SwipeTyping {
 
     var model: TypingDecoderModel { decoder.model }
 
+    func setPartner(_ model: TypingDecoderModel?) {
+        guard partner?.model !== model else { return }
+        partner = model.map { SwipeDecoder(model: $0) }
+        ownWordsRevision = nil
+    }
+
+    /// A reading and whether the partner's model gave it.
+    nonisolated struct Reading: Sendable {
+        var candidate: SwipeDecoder.Candidate
+        var fromPartner: Bool
+    }
+
+    /// Both models' readings of a path, best first, each word once.
+    nonisolated static func decode(
+        _ decoder: SwipeDecoder, partner: SwipeDecoder?, _ points: [CGPoint], times: [TimeInterval],
+        keys: TypingDecoder.Keys, previous: String?, limit: Int
+    ) -> [Reading] {
+        var readings = decoder.decode(points, times: times, keys: keys, previous: previous, limit: limit)
+            .map { Reading(candidate: $0, fromPartner: false) }
+        guard let partner else { return readings }
+        for var candidate in partner.decode(points, times: times, keys: keys, previous: previous, limit: limit) {
+            candidate.cost += partnerCost
+            if let same = readings.firstIndex(where: { $0.candidate.text == candidate.text }) {
+                if candidate.cost < readings[same].candidate.cost { readings[same] = Reading(candidate: candidate, fromPartner: true) }
+            } else {
+                readings.append(Reading(candidate: candidate, fromPartner: true))
+            }
+        }
+        return Array(readings.enumerated()
+            .sorted { $0.element.candidate.cost != $1.element.candidate.cost ? $0.element.candidate.cost < $1.element.candidate.cost : $0.offset < $1.offset }
+            .map(\.element).prefix(limit))
+    }
+
     /// How far a letter touch travels before it is a swipe: a key's width and gap.
     var threshold: CGFloat { engine.layout.swipePitch }
 
@@ -79,16 +117,23 @@ final class SwipeTyping {
         let revision = autocorrect.ownWordsRevision
         guard revision != ownWordsRevision else { return }
         ownWordsRevision = revision
-        let model = decoder.model
-        decoder.neverSuggest = TypingDecoder.NeverSuggest(
-            autocorrect.offensiveWords.blocked(allowSwearing: autocorrect.allowsSwearing), model: model
-        )
-        var extra = SwipeDecoder.ExtraWords()
-        if model.language == KeyboardLanguage.english.rawValue {
-            extra.add(AutocorrectEngine.englishContractions, cost: { SwipeDecoder.costOfContraction($0) }, model: model, contractions: true)
+        func sync(_ decoder: inout SwipeDecoder, ownWords: Bool) {
+            let model = decoder.model
+            decoder.neverSuggest = TypingDecoder.NeverSuggest(
+                autocorrect.offensiveWords.blocked(allowSwearing: autocorrect.allowsSwearing), model: model
+            )
+            var extra = SwipeDecoder.ExtraWords()
+            if model.language == KeyboardLanguage.english.rawValue {
+                extra.add(AutocorrectEngine.englishContractions, cost: { SwipeDecoder.costOfContraction($0) }, model: model, contractions: true)
+            }
+            if ownWords { extra.add(autocorrect.ownWords, cost: SwipeDecoder.ownWordCost, model: model) }
+            decoder.extraWords = extra
         }
-        extra.add(autocorrect.ownWords, cost: SwipeDecoder.ownWordCost, model: model)
-        decoder.extraWords = extra
+        sync(&decoder, ownWords: true)
+        if var partner {
+            sync(&partner, ownWords: false)
+            self.partner = partner
+        }
     }
 
     // MARK: - Touches (from `KeyboardKeyPlaneView`)
@@ -176,8 +221,8 @@ final class SwipeTyping {
         trail.fade()
         let started = clock()
         let layout = engine.layout
-        let candidates = decoder.decode(
-            stroke.points.map(layout.joinedForSwipe), times: stroke.times, keys: engine.swipeKeys,
+        let candidates = Self.decode(
+            decoder, partner: partner, stroke.points.map(layout.joinedForSwipe), times: stroke.times, keys: engine.swipeKeys,
             previous: engine.swipePreviousWord, limit: 8
         )
         let words = engine.autocorrect.readingsOfferingOwnCapitals(ranked(candidates), capsLock: engine.shift.state == .locked, model: model)
@@ -223,13 +268,17 @@ final class SwipeTyping {
 
     /// The readings best first once a rare name or abbreviation costs `nameCost` more.
     func ranked(_ candidates: [SwipeDecoder.Candidate]) -> [String] {
-        let model = decoder.model
-        func rareName(_ text: String) -> Bool {
+        ranked(candidates.map { Reading(candidate: $0, fromPartner: false) })
+    }
+
+    func ranked(_ readings: [Reading]) -> [String] {
+        func rareName(_ text: String, partner: Bool) -> Bool {
             guard engine.swipeReadsAsName(text) else { return false }
+            let model = partner ? (self.partner?.model ?? decoder.model) : decoder.model
             return model.index(of: text).map { model.unigramCost($0) > Self.commonNameCost } ?? true
         }
-        return candidates
-            .map { ($0.text, $0.cost + (rareName($0.text) ? nameCost : 0)) }
+        return readings
+            .map { ($0.candidate.text, $0.candidate.cost + (rareName($0.candidate.text, partner: $0.fromPartner) ? nameCost : 0)) }
             .enumerated()
             .sorted { $0.element.1 != $1.element.1 ? $0.element.1 < $1.element.1 : $0.offset < $1.offset }
             .map(\.element.0)
@@ -245,10 +294,10 @@ final class SwipeTyping {
         guard now - lastPreviewAt >= Self.previewInterval else { return }
         previewInFlight = true
         lastPreviewAt = now
-        let decoder = decoder, keys = engine.swipeKeys, previous = engine.swipePreviousWord
+        let decoder = decoder, partner = partner, keys = engine.swipeKeys, previous = engine.swipePreviousWord
         let points = swipe.stroke.points.map(engine.layout.joinedForSwipe), times = swipe.stroke.times, generation = generation
         Self.previewQueue.async { [weak self] in
-            let candidates = decoder.decode(points, times: times, keys: keys, previous: previous, limit: 3)
+            let candidates = Self.decode(decoder, partner: partner, points, times: times, keys: keys, previous: previous, limit: 3)
             DispatchQueue.main.async {
                 MainActor.assumeIsolated {
                     guard let self else { return }

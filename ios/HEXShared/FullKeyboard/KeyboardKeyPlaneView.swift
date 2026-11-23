@@ -19,6 +19,9 @@ final class KeyboardKeyPlaneView: UIView {
     /// or more ("Français"), else the dictation language's name ("English", "Norsk"), with
     /// the language dictations paste in while they're translated ("Español → English").
     var spaceLabel: String? { didSet { if spaceLabel != oldValue { setNeedsDisplay() } } }
+    /// Fala: the bilingual keyboard's "EN PT", small in the space bar's lower trailing corner
+    /// as Apple's draws it.
+    var spaceCornerLabel: String? { didSet { if spaceCornerLabel != oldValue { setNeedsDisplay() } } }
     /// A key just let go whose pop-up is still up: drawn held a moment longer, with it.
     var lingeringKind: KeyKind? { didSet { if lingeringKind != oldValue { setNeedsDisplay() } } }
     /// Called on every key going down, for clicks and haptics.
@@ -154,6 +157,15 @@ final class KeyboardKeyPlaneView: UIView {
                 // Apple's space bar unshades as it becomes the trackpad.
                 let fill = pressed.contains(.space) && !hideGlyphs ? palette.spaceHeldFill : palette.keyFill
                 context.fillKeycap(frame, fill: fill, shadow: palette.keyShadow, radius: radius)
+                if showGlyphs(), let spaceCornerLabel {
+                    let font = UIFont.systemFont(ofSize: isLandscape ? 9 : 10, weight: .medium, width: .condensed)
+                    let attributes: [NSAttributedString.Key: Any] = [.font: font, .foregroundColor: palette.textMuted, .kern: 0.2]
+                    let size = (spaceCornerLabel as NSString).size(withAttributes: attributes)
+                    (spaceCornerLabel as NSString).draw(
+                        at: CGPoint(x: frame.maxX - 8 - size.width, y: frame.maxY - 3 - size.height),
+                        withAttributes: attributes
+                    )
+                }
                 guard showGlyphs(), let spaceLabel else { continue }
                 drawText(
                     spaceLabel,

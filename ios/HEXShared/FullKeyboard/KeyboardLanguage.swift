@@ -906,12 +906,26 @@ nonisolated struct KeyboardLanguageList: Equatable, Sendable {
             let only = automatic()
             return KeyboardLanguageList(languages: [only], current: only)
         }
+        // Fala: English and Portuguese together are one bilingual keyboard, as Apple's, typed
+        // in Portuguese with English read beside it (`isBilingual`).
+        if Set(languages) == Self.bilingualPair { return KeyboardLanguageList(languages: languages, current: .portuguese) }
         let current = stored.flatMap { languages.contains($0) ? $0 : nil } ?? first
         return KeyboardLanguageList(languages: languages, current: current)
     }
 
-    /// Two or more: the space bar names the language and switches it.
-    var switches: Bool { languages.count > 1 }
+    /// Fala: the languages Apple's keyboard types at once, with no switching: Portuguese
+    /// (Brazil) and English. Autocorrect reads both (`partner`), a swipe reads both models
+    /// (`SwipeTyping.partner`), the keys are Portuguese's (its accents held), and the space bar
+    /// says "EN PT" in its corner, as the iPhone's does.
+    static let bilingualPair: Set<KeyboardLanguage> = [.english, .portuguese]
+    var isBilingual: Bool { Set(languages) == Self.bilingualPair }
+
+    /// The space bar's corner on the bilingual keyboard, as Apple's: "EN PT".
+    var bilingualLabel: String? { isBilingual ? "EN PT" : nil }
+
+    /// Two or more: the space bar names the language and switches it. Not on the bilingual
+    /// keyboard, which types both at once.
+    var switches: Bool { languages.count > 1 && !isBilingual }
 
     /// The language whose letters and long presses the keys show while `current` types. Apple
     /// types English and Spanish, and English and German, on one bilingual keyboard laid out as
@@ -924,6 +938,7 @@ nonisolated struct KeyboardLanguageList: Equatable, Sendable {
     /// space bar switches the language they autocorrect and dictate in; any other language
     /// types on its own.
     var layout: KeyboardLanguage {
+        if isBilingual { return .portuguese }
         let pairs: [Set<KeyboardLanguage>] = [[.english, .spanish], [.english, .german]]
         let sharing = pairs.filter { $0.contains(current) && $0.isSubset(of: languages) }.flatMap { $0 }
         return languages.first(where: sharing.contains) ?? current
@@ -940,7 +955,7 @@ nonisolated struct KeyboardLanguageList: Equatable, Sendable {
     /// The space bar's label while it switches: the current language's short name, with
     /// its region only when another layout of it is chosen too ("Français (Canada)").
     var spaceLabel: String? {
-        guard switches else { return nil }
+        guard switches, !isBilingual else { return nil }
         let twins = languages.filter { $0.baseLanguage == current.baseLanguage }.count
         return twins > 1 ? current.displayName : current.shortName
     }

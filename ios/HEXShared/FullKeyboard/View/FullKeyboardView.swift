@@ -554,7 +554,8 @@ final class FullKeyboardView: UIView {
     /// With two or more languages the space bar names the keyboard's; otherwise, with Full
     /// Access, the dictation language's.
     private func refreshSpaceLabel() {
-        plane.spaceLabel = languages.spaceLabel ?? (model.hasFullAccess ? model.languageSummary : nil)
+        plane.spaceCornerLabel = languages.bilingualLabel
+        plane.spaceLabel = languages.isBilingual ? nil : languages.spaceLabel ?? (model.hasFullAccess ? model.languageSummary : nil)
     }
 
     /// Settings › Experiments › Emoji shortcodes, in the App Group: cached for the strip, and
@@ -649,11 +650,13 @@ final class FullKeyboardView: UIView {
         let on = (swipeOverride ?? settings.swipeTyping) && settings.swipesIn(engine.language)
             && !UIAccessibility.isVoiceOverRunning
         let model = on ? settings.swipeModel(for: engine.language) : nil
+        // Fala: the bilingual keyboard reads a swipe as English too.
+        let partner = on && languages.isBilingual ? settings.swipeModel(for: .english) : nil
         if plane.swipe?.model !== model {
             plane.swipe = model.map { SwipeTyping(engine: engine, model: $0) }
-        } else {
-            plane.swipe?.syncWords()
         }
+        plane.swipe?.setPartner(partner)
+        plane.swipe?.syncWords()
     }
 
     /// Settings › Keyboard › Spatial autocorrect (on by default): maps the layout language's
