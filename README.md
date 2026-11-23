@@ -47,6 +47,10 @@ O esquema de URL foi trocado para não conflitar com o Hex oficial instalado no 
 - `ios/HEXShared/FullKeyboard/Engine/` e `Autocorrect/`: o motor de digitação e a autocorreção.
 - `ios/HEXMobile/`: o app principal (ajustes, onboarding, gravação fora do teclado).
 
+## Deslizar entre as letras em português
+
+O Hex só desliza em inglês e espanhol (e, em modo experimental, francês, polonês e alemão), porque cada idioma precisa de um modelo de digitação (`.hextm`) feito com o Google Books, que não tem português. O Fala traz o seu próprio `ios/HEXKeyboard/TypingModel/pt.hextm`, gerado por `ios/scripts/build-pt-typing-model.py` a partir de legendas brasileiras (OpenSubtitles 2018, via OPUS) e notícias (Leipzig Corpora Collection, `por_news_2020_1M`, CC BY), com as palavras conferidas no dicionário pt_BR do LibreOffice (VERO). Em português, o modelo serve só para o deslizar; o corretor automático continua o do iOS.
+
 ## Licença
 
 O código original é do Hex, © 2026 Christopher Langton, sob licença MIT (ver `LICENSE`). As licenças de terceiros estão em `THIRD_PARTY_NOTICES.md`.

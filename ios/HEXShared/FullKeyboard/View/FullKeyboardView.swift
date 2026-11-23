@@ -648,7 +648,7 @@ final class FullKeyboardView: UIView {
         let settings = FullKeyboardSettings()
         let on = (swipeOverride ?? settings.swipeTyping) && settings.swipesIn(engine.language)
             && !UIAccessibility.isVoiceOverRunning
-        let model = on ? settings.typingModel(for: engine.language) : nil
+        let model = on ? settings.swipeModel(for: engine.language) : nil
         if plane.swipe?.model !== model {
             plane.swipe = model.map { SwipeTyping(engine: engine, model: $0) }
         } else {
