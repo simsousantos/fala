@@ -928,8 +928,11 @@ final class FullKeyboardView: UIView {
         // Without Full Access the strip suggests and corrects like any keyboard's; what
         // dictation needs shows only once the Hex key is tapped (`showFullAccessHint`).
         // Fala: what a ⚡ action is doing, or why it couldn't, comes first.
+        let geometry = falaGeometryStatus
         let status: String? = if let functionStatus {
             functionStatus
+        } else if let geometry {
+            geometry
         } else if model.hasFullAccess, model.stagePhase == .failed {
             model.statusMessage
         } else {
@@ -947,7 +950,7 @@ final class FullKeyboardView: UIView {
         if model.hasFullAccess, model.offeredDictation != nil {
             if case .code = clipboardOffer {} else { clipboardOffer = .dictation }
         }
-        if functionStatus != nil { clipboardOffer = nil }
+        if functionStatus != nil || geometry != nil { clipboardOffer = nil }
         stripOffer = clipboardOffer
         var suggestions = withStripEmoji(engine.suggestions, quiet: lastDictation != nil || status != nil || clipboardOffer != nil)
         // The experiment hides the words, not the strip: Undo, Paste, status, notices and the

@@ -60,8 +60,40 @@ final class FunctionDiscButton: UIButton {
     }
 }
 
+/// Fala, temporary: while true, an empty field's strip shows what the keyboard can measure of
+/// its place on screen, to look for a sign of the 17 pt iOS sometimes draws above it.
+enum FalaDebug {
+    static let showsGeometry = true
+}
+
 @MainActor
 extension FullKeyboardView {
+    /// The last geometry shown, so a layout pass refreshes the strip only when it changed.
+    static var falaLastGeometry = ""
+
+    /// Heights from this view up to its window, the keyboard's spot in the window, the
+    /// window's frame and the screen: `Y0 W0/336 S852 A0,34 [320 336 336]`.
+    func falaGeometryText() -> String {
+        guard let window else { return "sem janela" }
+        var chain: [String] = []
+        var view: UIView? = self
+        while let current = view, chain.count < 6 {
+            chain.append(String(Int(current.bounds.height.rounded())))
+            view = current.superview
+        }
+        let inWindow = convert(bounds, to: window)
+        let screen = window.windowScene?.screen.bounds.height ?? 0
+        let insets = window.safeAreaInsets
+        return "Y\(Int(inWindow.minY)) W\(Int(window.frame.minY))/\(Int(window.frame.height)) "
+            + "S\(Int(screen)) A\(Int(insets.top)),\(Int(insets.bottom)) [\(chain.joined(separator: " "))]"
+    }
+
+    /// The geometry for the strip's status: only while debugging, and only in an empty field.
+    var falaGeometryStatus: String? {
+        guard FalaDebug.showsGeometry, !engine.target.hasText else { return nil }
+        return falaGeometryText()
+    }
+
     /// Builds the discs once, from `init`, just above the Hex key (under the emoji panel and
     /// the key callouts).
     func setUpFunctionBar() {
@@ -122,6 +154,13 @@ extension FullKeyboardView {
             functionButton.frame = disc
             functionTranslateButton.frame = disc
             functionFormalButton.frame = disc.offsetBy(dx: layout.hexOnLeading ? -step : step, dy: 0)
+        }
+        if FalaDebug.showsGeometry {
+            let geometry = falaGeometryText()
+            if geometry != Self.falaLastGeometry {
+                Self.falaLastGeometry = geometry
+                DispatchQueue.main.async { [weak self] in self?.refreshStrip() }
+            }
         }
         updateFunctionBarVisibility()
     }

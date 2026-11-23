@@ -205,6 +205,9 @@ final class LiveDictationPreviewHost {
     }
 
     /// The recording state changed.
+    /// Fala: Hex's Show what I say (the words in place of the keys) is off.
+    static let falaShowsWordsOverKeys = false
+
     func sync() {
         sync(keyboard?.model.liveText.transcript)
     }
@@ -212,7 +215,9 @@ final class LiveDictationPreviewHost {
     private func sync(_ transcript: LiveTranscript?) {
         guard let keyboard else { return }
         let live = keyboard.model.liveText
-        guard keyboard.showsRecording, live.showsPreview, let transcript else {
+        // Fala: the keys stay while recording, as the Function keyboard's do; only the bar
+        // above them changes (the wave, ✕ and ✓). The words over the keys never show.
+        guard Self.falaShowsWordsOverKeys, keyboard.showsRecording, live.showsPreview, let transcript else {
             hide()
             return
         }

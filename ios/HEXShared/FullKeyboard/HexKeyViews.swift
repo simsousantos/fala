@@ -273,6 +273,8 @@ final class HexKeyRecordingPanel: UIView {
     var onCycleStyle: (() -> Void)?
 
     let scope: DotScopeHostView
+    /// Fala: the Function keyboard's wave, shown in the well instead of Hex's Dot Scope.
+    let wave = FalaWaveformView()
     private let styleButton = UIButton(type: .custom)
     private let well = UIView()
     private let cancelButton = PanelKeyButton()
@@ -299,6 +301,8 @@ final class HexKeyRecordingPanel: UIView {
         scope.reduceMotion = StripMotion.reduced
         scope.hostFades = true
         scope.useDemoVoice = ProcessInfo.processInfo.arguments.contains("--snap-state")
+        scope.isHidden = true
+        wave.loudnessProvider = loudness
 
         styleButton.titleLabel?.font = .systemFont(ofSize: 13, weight: .medium)
         styleButton.semanticContentAttribute = .forceRightToLeft
@@ -309,6 +313,7 @@ final class HexKeyRecordingPanel: UIView {
         well.layer.cornerCurve = .continuous
         well.clipsToBounds = true
         well.addSubview(scope)
+        well.addSubview(wave)
 
         cancelButton.symbol = "xmark"
         cancelButton.accessibilityLabel = "Cancel dictation"
@@ -336,12 +341,18 @@ final class HexKeyRecordingPanel: UIView {
     func tearDown() {
         scope.phase = .hidden
         scope.tearDown()
+        wave.reset()
     }
 
     func update(phase: DotScopePhase, style: DictationStyle) {
         let wasTranscribing = isTranscribing
         isTranscribing = phase == .processing
         scope.phase = phase
+        switch phase {
+        case .recording: wave.start()
+        case .processing: wave.freeze()
+        case .hidden, .idle, .failed: wave.reset()
+        }
         // The scope, then two round buttons, ✕ and ✓; once the recording stops the ✓ turns into
         // the spinner in the same spot, so there's one place to look, and ✕ still cancels.
         doneButton.isPrimary = true
@@ -431,6 +442,8 @@ final class HexKeyRecordingPanel: UIView {
     private func applyPalette() {
         styleButton.setTitleColor(palette.textMuted, for: .normal)
         scope.isDark = palette.isDark
+        // Function's bars are the keys' ink a little softened.
+        wave.color = palette.textBase.withAlphaComponent(0.8)
         cancelButton.palette = palette
         doneButton.palette = palette
         doneSpinner.color = .white
@@ -471,7 +484,7 @@ final class HexKeyRecordingPanel: UIView {
             let wellLeft = (hexOnLeading ? doneRect.maxX : cancelRect.maxX) + 8
             let wellRight = (hexOnLeading ? cancelRect.minX : doneRect.minX) - 8
             well.frame = CGRect(x: wellLeft, y: rowY, width: max(24, wellRight - wellLeft), height: rowH)
-            scope.frame = well.bounds
+            scope.frame = well.bounds; wave.frame = well.bounds
             return
         }
         doneButton.cornerRadius = rowH / 2
@@ -494,7 +507,7 @@ final class HexKeyRecordingPanel: UIView {
         let wellLeft = hexOnLeading ? cancelRect.maxX + 6 : innerLeft
         let wellRight = hexOnLeading ? innerRight : cancelRect.minX - 6
         well.frame = CGRect(x: wellLeft, y: rowY, width: max(24, wellRight - wellLeft), height: rowH)
-        scope.frame = well.bounds
+        scope.frame = well.bounds; wave.frame = well.bounds
     }
 
     @objc private func done() { onDone?() }

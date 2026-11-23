@@ -11,8 +11,8 @@ packages:
     exactVersion: 0.15.5
 settings:
   base:
-    # Coloque aqui o seu Team ID (Xcode › Settings › Accounts). Vazio = escolher no Xcode.
-    DEVELOPMENT_TEAM: ""
+    # Team ID de Vinicius (Personal Team), para o Xcode não esquecer a assinatura a cada projeto gerado.
+    DEVELOPMENT_TEAM: NW4LB64755
     SWIFT_VERSION: 6.0
     # The compiler finds the interface's strings for the String Catalogs (Localizable.xcstrings).
     SWIFT_EMIT_LOC_STRINGS: YES
