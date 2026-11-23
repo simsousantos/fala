@@ -1107,6 +1107,9 @@ nonisolated extension KeyboardMetrics {
     /// centred on the words' line (`stripTextCenter`).
     static let stripBarHeight: CGFloat = 38
     static let stripGap: CGFloat = 8
+    /// Fala: the gap under Apple's bar, upright, is the Function keyboard's "Gap Under the Bar"
+    /// as Vinicius tuned it (14.75 pt; Hex had 8). Turned keeps `appleBarTurnedGap`.
+    static let falaBarGap: CGFloat = 14.75
     /// On the iPhone Duo iOS sets the keyboard in a platter with its own band above, and the
     /// strip is Apple's whole 44 pt bar, right on the keys.
     static let insetStripHeight: CGFloat = 44
@@ -1173,7 +1176,7 @@ nonisolated extension KeyboardMetrics {
     /// 6 pt turned. Upright the keyboard grows 6 pt upward (rows stay put) and its top edge is
     /// Apple's; turned it was already Apple's height (42 + 8 pt), and only the strip changes.
     func withAppleBar(turned: Bool) -> KeyboardMetrics {
-        var m = rebuilt(stripHeight: Self.appleBarHeight, stripBottom: turned ? Self.appleBarTurnedGap : Self.stripGap)
+        var m = rebuilt(stripHeight: Self.appleBarHeight, stripBottom: turned ? Self.appleBarTurnedGap : Self.falaBarGap)
         m.appleBar = true
         return m
     }
