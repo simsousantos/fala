@@ -326,8 +326,8 @@ final class HexKeyRecordingPanel: UIView {
         doneButton.addTarget(self, action: #selector(done), for: .touchUpInside)
 
         doneSpinner.hidesWhenStopped = true
-        // Fala: the spinner turns in the blue ✓ disc, so it's white.
-        doneSpinner.color = .white
+        // Fala: as in Function, ✓ turns from the blue disc to a plain key disc with the spinner.
+        doneSpinner.color = palette.textBase
         doneSpinner.isUserInteractionEnabled = false
         for view in [styleButton, well, cancelButton, doneButton, doneSpinner] {
             addSubview(view)
@@ -348,6 +348,7 @@ final class HexKeyRecordingPanel: UIView {
         let wasTranscribing = isTranscribing
         isTranscribing = phase == .processing
         scope.phase = phase
+        doneButton.isAction = !isTranscribing
         switch phase {
         case .recording: wave.start()
         case .processing: wave.freeze()
@@ -442,11 +443,11 @@ final class HexKeyRecordingPanel: UIView {
     private func applyPalette() {
         styleButton.setTitleColor(palette.textMuted, for: .normal)
         scope.isDark = palette.isDark
-        // Function's bars are the keys' ink a little softened.
-        wave.color = palette.textBase.withAlphaComponent(0.8)
+        // The wave greys the keys' ink itself (`FalaWaveformView.barAlpha`).
+        wave.color = palette.textBase
         cancelButton.palette = palette
         doneButton.palette = palette
-        doneSpinner.color = .white
+        doneSpinner.color = palette.textBase
     }
 
     override func layoutSubviews() {
