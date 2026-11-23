@@ -1137,7 +1137,13 @@ nonisolated extension KeyboardMetrics {
     /// the keyboard's top edge. Elsewhere the strip is Apple's bar and they centre in it.
     static let barTextAboveKeys: CGFloat = 26
     var stripTextCenter: CGFloat {
-        if appleBar { return stripHeight - Self.appleBarTextAboveBottom }
+        if appleBar {
+            // Fala: upright, with the extra room on top (`falaTopRoom`), everything on the bar
+            // (⚡, the words, the wave, ✕ and ✓) centres between the keyboard's top edge and
+            // row 1's keys, the same space above as below.
+            if stripHeight == Self.appleBarHeight + Self.falaTopRoom { return (stripHeight + stripBottom) / 2 }
+            return stripHeight - Self.appleBarTextAboveBottom
+        }
         return stripHeight == Self.stripBarHeight ? stripHeight + stripBottom - Self.barTextAboveKeys : stripHeight / 2
     }
     /// A suggestion's chip (an autocorrection, a pressed word, a revert) and the dividers: in
@@ -1155,12 +1161,12 @@ nonisolated extension KeyboardMetrics {
     /// the bar's bottom); the bubble fills its cell from 6 pt down to the bar's bottom, a 38 pt
     /// capsule, and the dividers are 1 × 24 pt, hidden beside the bubble.
     static let appleBarHeight: CGFloat = 44
-    /// Fala, test: in some apps (Spotlight, Notes: Liquid Glass hosts) iOS draws about 16 pt of
-    /// its own panel above a third-party keyboard and in others (WhatsApp) nothing, with the keys
-    /// and the bar in the same place either way (iPhone, iOS 26: the panel's top 47 px higher at
-    /// 3 px per point). If iOS only pads a keyboard up to a minimum height, a keyboard this much
-    /// taller gets no band, and looks the same everywhere.
-    static let falaTopRoom: CGFloat = 17
+    /// Fala: in some apps (Spotlight, Notes: Liquid Glass hosts) iOS draws about 16 pt of its own
+    /// panel above a third-party keyboard and in others (WhatsApp) nothing (iPhone, iOS 26: the
+    /// panel's top 47 px higher at 3 px per point). It only pads a keyboard up to a minimum
+    /// height: 17 pt taller, the keyboard was the same height in WhatsApp and Spotlight (Vinicius's
+    /// screenshots). So the bar takes this room on top and centres its content in it.
+    static let falaTopRoom: CGFloat = 16
     static let appleBarTurnedGap: CGFloat = 6
     static let appleBarTextAboveBottom: CGFloat = 19
     static let appleBubbleHeight: CGFloat = 38
