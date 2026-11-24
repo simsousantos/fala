@@ -179,13 +179,28 @@ final class HexKeyControl: UIControl {
         let disc = CGRect(x: cap.midX - side / 2, y: midY - side / 2, width: side, height: side)
         (isHighlighted ? palette.keyPressedFill : palette.keyFill).setFill()
         UIBezierPath(ovalIn: disc).fill()
-        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .medium)
-        if let image = UIImage(systemName: "waveform", withConfiguration: config)?
-            .withTintColor(palette.textBase, renderingMode: .alwaysOriginal) {
-            image.draw(at: CGPoint(x: disc.midX - image.size.width / 2, y: disc.midY - image.size.height / 2))
-        }
+        Self.drawFunctionWave(in: disc, color: palette.textBase)
         if let translatingTo {
             drawTranslationBadge(TranslationPasteChoice.badge(target: translatingTo), keycap: cap, mark: disc)
+        }
+    }
+
+    /// MyKeyboard: Function's own waveform mark, measured on its keyboard (3 px a point):
+    /// six rounded bars 1.33 pt wide, one every 2.67 pt, as tall as these shares of a 36 pt
+    /// disc, the middle-left one the tallest. Bolder and easier to read at this size than SF
+    /// Symbols' nine-bar `waveform`.
+    static let functionWaveHeights: [CGFloat] = [4, 10.7, 16.7, 8.7, 13.3, 5.3]
+
+    static func drawFunctionWave(in disc: CGRect, color: UIColor) {
+        let scale = disc.height / 36
+        let width = 1.33 * scale, pitch = 2.67 * scale
+        let total = pitch * CGFloat(functionWaveHeights.count - 1) + width
+        color.setFill()
+        for (i, h) in functionWaveHeights.enumerated() {
+            let height = h * scale
+            let bar = CGRect(x: disc.midX - total / 2 + CGFloat(i) * pitch, y: disc.midY - height / 2,
+                             width: width, height: height)
+            UIBezierPath(roundedRect: bar, cornerRadius: width / 2).fill()
         }
     }
 

@@ -46,7 +46,8 @@ final class FunctionDiscButton: UIButton {
     }
 
     private func applyLook() {
-        let config = UIImage.SymbolConfiguration(pointSize: 16, weight: .semibold)
+        // MyKeyboard: Function's proportions: the mark about 40% of the 36 pt disc, medium.
+        let config = UIImage.SymbolConfiguration(pointSize: symbolName == "bolt.fill" ? 14 : 15, weight: .medium)
         let image = UIImage(systemName: symbolName, withConfiguration: config)?
             .withTintColor(palette.textBase, renderingMode: .alwaysOriginal)
         setImage(image, for: .normal)
@@ -126,11 +127,18 @@ extension FullKeyboardView {
     }
 
     /// The ⚡ menu. Rebuilt after every translation, so the language last used leads.
+    /// The first of these SF Symbols this iOS has (newer names first), as Function's menu
+    /// draws Apple's own symbols.
+    static func menuSymbol(_ names: String...) -> UIImage? {
+        for name in names { if let image = UIImage(systemName: name) { return image } }
+        return nil
+    }
+
     func makeFunctionMenu() -> UIMenu {
-        let rewrite = UIAction(title: "Reescrever", image: UIImage(systemName: "wand.and.stars")) { [weak self] _ in
+        let rewrite = UIAction(title: "Reescrever", image: Self.menuSymbol("apple.writing.tools", "pencil.and.sparkles", "wand.and.stars")) { [weak self] _ in
             self?.runFunction(.rewrite)
         }
-        let formal = UIAction(title: "Formalizar", image: UIImage(systemName: "signature")) { [weak self] _ in
+        let formal = UIAction(title: "Formalizar", image: Self.menuSymbol("textformat", "signature")) { [weak self] _ in
             self?.runFunction(.formal)
         }
         let recent = FalaTranslateTargets.recentTarget
@@ -140,8 +148,8 @@ extension FullKeyboardView {
                 self?.runFunction(.translate(code))
             }
         }
-        let translate = UIMenu(title: "Traduzir", image: UIImage(systemName: "translate"), children: languages)
-        let settings = UIAction(title: "Ajustes", image: UIImage(systemName: "gearshape")) { [weak self] _ in
+        let translate = UIMenu(title: "Traduzir", image: Self.menuSymbol("translate"), children: languages)
+        let settings = UIAction(title: "Ajustes", image: Self.menuSymbol("gearshape")) { [weak self] _ in
             self?.model.onOpenURL?(KeyboardParakeetNotice.opensHex)
         }
         return UIMenu(children: [
