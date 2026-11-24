@@ -1144,9 +1144,9 @@ nonisolated extension KeyboardMetrics {
     static let barTextAboveKeys: CGFloat = 26
     var stripTextCenter: CGFloat {
         if appleBar {
-            // Fala: upright, with the extra room on top (`falaTopRoom`), everything on the bar
-            // (⚡, the words, the wave, ✕ and ✓) centres between the keyboard's top edge and
-            // row 1's keys, the same space above as below.
+            // Fala: everything on the bar (⚡, the words, the wave, ✕ and ✓) centres between the
+            // keyboard's top edge and row 1's keys, the same space above as below: 26 pt each
+            // way at Hex's height upright (Hex: 25 above, 27 below), 25 turned (as Hex).
             if stripHeight == Self.appleBarHeight + Self.falaTopRoom { return (stripHeight + stripBottom) / 2 }
             return stripHeight - Self.appleBarTextAboveBottom
         }
@@ -1171,8 +1171,10 @@ nonisolated extension KeyboardMetrics {
     /// panel above a third-party keyboard and in others (WhatsApp) nothing (iPhone, iOS 26: the
     /// panel's top 47 px higher at 3 px per point). It only pads a keyboard up to a minimum
     /// height: 17 pt taller, the keyboard was the same height in WhatsApp and Spotlight (Vinicius's
-    /// screenshots). So the bar takes this room on top and centres its content in it.
-    static let falaTopRoom: CGFloat = 16
+    /// screenshots). With this room on top the bar centred its content in it; that build is kept
+    /// on the branch `backup/altura-alta` (16 here). At 0 the keyboard is Hex's height, the
+    /// same as Apple's keyboard, and the bar's words sit where Hex puts them.
+    static let falaTopRoom: CGFloat = 0
     static let appleBarTurnedGap: CGFloat = 6
     static let appleBarTextAboveBottom: CGFloat = 19
     static let appleBubbleHeight: CGFloat = 38
