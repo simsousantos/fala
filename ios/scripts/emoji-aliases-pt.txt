@@ -1,0 +1,84 @@
+# MyKeyboard's own Brazilian chat words for emoji: written for MyKeyboard, not Unicode data.
+# word<TAB>emoji, best first
+kkk	😂 🤣 😆
+kkkk	😂 🤣
+kkkkk	🤣 😂
+rs	😄 😅
+rsrs	😄 😅 😆
+haha	😂 😄
+hahaha	😂 🤣
+morri	💀 😂 🤣
+chorando	😭 😂
+top	👍 🔥 👌
+show	👏 🔥 👍
+massa	🔥 😎 👍
+legal	👍 😊 😎
+blz	👍 👌
+beleza	👍 👌 😊
+valeu	🙏 👊 👍
+vlw	🙏 👍
+obrigado	🙏 😊 ❤️
+obrigada	🙏 😊 ❤️
+obg	🙏 😊
+pfv	🙏 🥺
+porfavor	🙏 🥺
+amo	❤️ 😍 🥰
+amor	❤️ 😘 🥰
+saudade	🥺 ❤️ 😢
+saudades	🥺 ❤️ 😢
+beijo	😘 💋 😚
+beijos	😘 💋
+bjs	😘 💋
+abraco	🤗 ❤️
+parabens	🎉 🥳 👏
+feliz	😊 😄 🥳
+triste	😢 😞 😔
+raiva	😡 😠 🤬
+bravo	😠 😡
+cansado	😴 😩 🥱
+cansada	😴 😩 🥱
+sono	😴 🥱 💤
+fome	🤤 🍔 🍕
+cerveja	🍺 🍻
+breja	🍺 🍻
+cafe	☕ 🥐
+almoco	🍽️ 🍛 🥗
+janta	🍽️ 🍝
+churrasco	🥩 🍖 🔥
+praia	🏖️ 🌊 ☀️
+sol	☀️ 😎 🌞
+chuva	🌧️ ☔ ⛈️
+frio	🥶 ❄️
+calor	🥵 ☀️ 🔥
+trabalho	💼 💻 😩
+reuniao	💼 📅 🗓️
+dinheiro	💰 💸 🤑
+grana	💰 💸
+carro	🚗 🚙
+viagem	✈️ 🧳 🌍
+festa	🎉 🥳 🍾
+aniversario	🎂 🎉 🥳
+niver	🎂 🎉 🥳
+jogo	⚽ 🎮
+futebol	⚽ 🏟️
+gol	⚽ 🥅 🎉
+dormir	😴 🛌 💤
+bomdia	☀️ 😊 ☕
+boanoite	🌙 😴 ✨
+nossa	😮 😱 🤯
+eita	😳 😬 😮
+vish	😬 😅 😳
+caramba	😮 🤯 😱
+socorro	🆘 😱
+ok	👌 👍
+certo	✅ 👍
+fogo	🔥
+ideia	💡 🤔
+pensando	🤔 💭
+duvida	🤔 ❓
+olhos	👀
+olha	👀
+gato	🐱 🐈
+cachorro	🐶 🐕 🦮
+dog	🐶 🐕
+cao	🐶 🐕

@@ -43,6 +43,10 @@ final class FullKeyboardView: UIView {
     let hexKey = HexKeyControl()
     // Fala: the Function keyboard's bar (FullKeyboardView+Function.swift): the ⚡ disc, the
     // two shortcuts after a dictation, and what an action is doing or replaced.
+    /// MyKeyboard: the ":" emoji row over the strip (`FullKeyboardView+EmojiRow`).
+    var falaEmojiRow: EmojiRowView?
+    var falaEmojiToken: String?
+    var falaEmojiEntries: [Int] = []
     let functionButton = FunctionDiscButton()
     let functionTranslateButton = FunctionDiscButton()
     let functionFormalButton = FunctionDiscButton()
@@ -794,6 +798,7 @@ final class FullKeyboardView: UIView {
         accentCallout.frame = content
         stripView.frame = layout.stripFrame.offsetBy(dx: 0, dy: lift)
         selectionStrip.frame = stripView.frame
+        falaEmojiRow?.frame = stripView.frame
         stripView.slotFrames = layout.stripSlotFrames.map { $0.offsetBy(dx: -layout.stripFrame.minX, dy: -layout.stripFrame.minY) }
         stripView.pillInset = layout.metrics.stripInset
         stripView.textCenterY = layout.metrics.stripTextCenter
@@ -953,7 +958,10 @@ final class FullKeyboardView: UIView {
         }
         if functionStatus != nil || geometry != nil { clipboardOffer = nil }
         stripOffer = clipboardOffer
-        var suggestions = withStripEmoji(engine.suggestions, quiet: lastDictation != nil || status != nil || clipboardOffer != nil)
+        // MyKeyboard: while ":" is being typed, the emoji row takes the strip's words.
+        let emojiRowShows = functionStatus == nil && refreshFalaEmojiRow()
+        if emojiRowShows { clipboardOffer = nil; stripOffer = nil }
+        var suggestions = emojiRowShows ? [] : withStripEmoji(engine.suggestions, quiet: lastDictation != nil || status != nil || clipboardOffer != nil)
         // The experiment hides the words, not the strip: Undo, Paste, status, notices and the
         // Hex key keep their places, and an empty strip offers the clipboard as it does when no
         // word is suggested. What you typed before a correction (`.revert`) stays, so Delete

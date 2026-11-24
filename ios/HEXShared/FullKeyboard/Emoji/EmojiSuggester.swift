@@ -234,6 +234,14 @@ nonisolated enum EmojiSuggester {
                 if let last = stem.last, stem.dropLast().last == last { add(String(stem.dropLast())) }
             }
             if word.hasSuffix("y") { add(String(word.dropLast())) }
+        case "pt":
+            // MyKeyboard: Brazilian Portuguese plurals and diminutives, folded ("coracoes",
+            // "cachorrinho"), then English's plural for the English words beside them.
+            for (suffix, stem) in [("oes", "ao"), ("aes", "ao"), ("ais", "al"), ("eis", "el"), ("ois", "ol"),
+                                   ("ns", "m"), ("zinho", ""), ("zinha", ""), ("inho", "o"), ("inha", "a"),
+                                   ("es", ""), ("s", "")] where word.hasSuffix(suffix) {
+                add(String(word.dropLast(suffix.count)) + stem)
+            }
         default:
             for suffix in ["en", "er", "es", "e", "s", "n"] where word.hasSuffix(suffix) {
                 add(String(word.dropLast(suffix.count)))

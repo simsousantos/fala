@@ -28,9 +28,9 @@ final class EmojiShortcodeTests: XCTestCase {
         XCTAssertEqual(try matches("hello :pizza", enabled: false), [])
     }
 
-    func testOneCharacterIsNotATokenAndTwoAre() throws {
-        XCTAssertNil(EmojiShortcode.token(before: ":p"))
-        XCTAssertEqual(try matches(":p"), [], "a colon and one letter is not a token yet")
+    /// MyKeyboard: one character is a token, since the strip's emoji row narrows as you type.
+    func testOneCharacterIsAToken() throws {
+        XCTAssertEqual(EmojiShortcode.token(before: ":p")?.name, "p")
         XCTAssertFalse(try matches(":pi").isEmpty, "two characters may match")
         XCTAssertEqual(try matches(":piz").first ?? "", "🍕")
     }
@@ -128,5 +128,10 @@ final class EmojiShortcodeTests: XCTestCase {
         settings.emojiShortcodes = true
         XCTAssertTrue(FullKeyboardSettings(defaults: defaults).emojiShortcodes)
         XCTAssertTrue(defaults.bool(forKey: "experiments.emojiShortcodes"))
+    }
+
+    /// MyKeyboard: accented names are tokens, read without their accents.
+    func testAccentedNameIsAToken() {
+        XCTAssertEqual(EmojiShortcode.token(before: "oi :coração")?.lookupName, "coracao")
     }
 }

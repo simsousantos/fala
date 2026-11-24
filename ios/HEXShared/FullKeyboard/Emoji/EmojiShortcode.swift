@@ -9,7 +9,9 @@ import Foundation
 nonisolated enum EmojiShortcode {
     /// The shortest name a token holds: two letters or digits, so ":pi" suggests and ":p" is
     /// just a colon.
-    static let minimumNameLength = 2
+    /// MyKeyboard: one is enough, since the strip's emoji row (`FullKeyboardView+EmojiRow`)
+    /// narrows as you type; a lone ":" shows the sentence's emoji there.
+    static let minimumNameLength = 1
 
     /// A ":name" right before the cursor, as typed.
     struct Token: Equatable, Sendable {
@@ -21,7 +23,7 @@ nonisolated enum EmojiShortcode {
         /// The name in the emoji index's words: lowercased, with "_", "+" and "-" as spaces,
         /// since the index splits chat words that way ("sweat_smile" is "sweat smile" there).
         var lookupName: String {
-            name.lowercased().split { $0 == "_" || $0 == "+" || $0 == "-" }.joined(separator: " ")
+            EmojiText.fold(name).split { $0 == "_" || $0 == "+" || $0 == "-" }.joined(separator: " ")
         }
     }
 
@@ -66,14 +68,16 @@ nonisolated enum EmojiShortcode {
     }
 
     /// A name's first character: a letter or digit, never "_", "+" or "-".
+    /// MyKeyboard: accented letters too (":coração").
     private static func isNameStart(_ character: Character) -> Bool {
-        character.isASCII && (character.isLetter || character.isNumber)
+        character.isLetter || (character.isASCII && character.isNumber)
     }
 
     /// A name's other characters: ASCII letters, digits, "_", "+" and "-".
     private static func isNameCharacter(_ character: Character) -> Bool {
+        if character.isLetter { return true }
         guard character.isASCII else { return false }
-        return character.isLetter || character.isNumber || character == "_" || character == "+" || character == "-"
+        return character.isNumber || character == "_" || character == "+" || character == "-"
     }
 
     // MARK: - Matching
