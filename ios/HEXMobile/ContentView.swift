@@ -45,6 +45,8 @@ struct ContentView: View {
     @State private var keyboardSpeech = KeyboardSpeechPreparation()
     @State private var onboardingPage = OnboardingProgress.launchPage
     @State private var settingsPath = SettingsSnapshotFixture.initialPath
+    /// MyKeyboard: what the home screen's settings search holds.
+    @State private var settingsQuery = ""
     /// Settings › Dictation opened from the speech model card: it starts at that card's row.
     @State private var dictationOpensAtSpeechModel = false
     @State private var showAcknowledgements = false
@@ -256,18 +258,27 @@ struct ContentView: View {
                     .transition(.opacity.combined(with: .scale(scale: 0.98)))
                 }
 
-                SettingsCard {
-                    ForEach(Array(SettingsPage.allCases.enumerated()), id: \.element) { index, page in
-                        if index > 0 {
-                            SettingsDivider(leading: 50)
+                // MyKeyboard: search across every page's settings.
+                SettingsSearchField(query: $settingsQuery)
+                    .padding(.top, 8)
+
+                if settingsQuery.trimmingCharacters(in: .whitespaces).isEmpty {
+                    SettingsCard {
+                        ForEach(Array(SettingsPage.allCases.enumerated()), id: \.element) { index, page in
+                            if index > 0 {
+                                SettingsDivider(leading: 50)
+                            }
+                            NavigationLink(value: page) {
+                                SettingsLinkLabel(title: page.title, icon: page.icon)
+                            }
+                            .buttonStyle(.plain)
                         }
-                        NavigationLink(value: page) {
-                            SettingsLinkLabel(title: page.title, icon: page.icon)
-                        }
-                        .buttonStyle(.plain)
+                    }
+                } else {
+                    SettingsSearchResults(query: settingsQuery) { page in
+                        settingsPath = [page]
                     }
                 }
-                .padding(.top, 8)
 
                 SettingsCard {
                     Button {

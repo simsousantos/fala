@@ -136,6 +136,12 @@ struct KeyboardSettingsPage: View {
                 )
             }
 
+            // MyKeyboard: the microphone dictation records from, the same setting as
+            // Dictation › Microphone, here too because it is about the keyboard's dictation.
+            SettingsCard {
+                KeyboardMicrophoneRow()
+            }
+
             // Layout: mode, languages, Hex key placement, number row.
             SettingsCard {
                 HStack(spacing: 12) {
@@ -401,5 +407,42 @@ private struct EmojiSkinToneRow: View {
         }
         .padding(.horizontal, 16)
         .padding(.vertical, 12)
+    }
+}
+
+/// MyKeyboard: Keyboard › Microphone. "iPhone" always records from the iPhone's own
+/// microphone, even with AirPods, headphones or a car connected; the choice is shared with
+/// Dictation › Microphone (`DictationController.setMicrophone`), which the keyboard reads.
+private struct KeyboardMicrophoneRow: View {
+    private var dictation: DictationController { DictationController.shared }
+
+    var body: some View {
+        HStack(spacing: 12) {
+            SettingsRowLabel(
+                title: String(localized: "Microphone"),
+                detail: dictation.microphone == .iPhone
+                    ? "Sempre o microfone do iPhone, mesmo com fones conectados"
+                    : dictation.microphone.detail
+            )
+            Spacer(minLength: 8)
+            Menu {
+                ForEach(MicrophoneChoice.allCases, id: \.self) { candidate in
+                    Button {
+                        dictation.setMicrophone(candidate)
+                    } label: {
+                        if dictation.microphone == candidate {
+                            Label(candidate.label, systemImage: "checkmark")
+                        } else {
+                            Text(candidate.label)
+                        }
+                    }
+                }
+            } label: {
+                SettingsMenuValue(value: dictation.microphone.label)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 10)
+        .frame(minHeight: 50)
     }
 }
