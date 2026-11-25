@@ -20,6 +20,12 @@ final class KeyboardViewController: UIInputViewController {
     private var barEmojiPanel: EmojiPanelView?
     private var barEmojiLibrary: EmojiLibrary?
     private var heightConstraint: NSLayoutConstraint?
+    /// MyKeyboard, test (`FalaDebug.defersHeight`): from `viewWillAppear` until just after
+    /// `viewDidAppear` the keyboard leaves iOS its default height (216 pt) and keeps its own
+    /// here, as the Function keyboard seems to: the diagnostics showed iOS adding its ~16 pt
+    /// band only when the keyboard's own height was already in place as it appeared.
+    private var heightHeld = false
+    private var heldHeight: CGFloat?
     /// The dictation bar's top edge, `barTopInset` below the keyboard's.
     private var barTopConstraint: NSLayoutConstraint?
     /// A thin material under the surface, mounted only when iOS kept an earlier Hex keyboard on
@@ -148,6 +154,7 @@ final class KeyboardViewController: UIInputViewController {
 
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+        holdHeightForAppearance()
         reportFullAccess(force: true)
         isRetired = false
         autoStartPending = true
@@ -177,6 +184,7 @@ final class KeyboardViewController: UIInputViewController {
         view.window?.gestureRecognizers?.forEach { $0.delaysTouchesBegan = false }
         fullKeyboard?.keyboardDidAppear()
         fullKeyboard?.markFalaDiagnostics("did")
+        releaseHeightAfterAppearance()
         fullKeyboard?.offerModelNotice()
         // Onboarding's practice tells Hex's keyboard on screen from another one, or iOS's
         // dictation, by these.
@@ -275,6 +283,7 @@ final class KeyboardViewController: UIInputViewController {
 
     override func viewDidDisappear(_ animated: Bool) {
         super.viewDidDisappear(animated)
+        heightHeld = false
         guard !isShown else { return }
         tearDownSurface()
     }
@@ -330,6 +339,10 @@ final class KeyboardViewController: UIInputViewController {
     /// only when the surface asks for another (the emoji search's row), and never animated:
     /// iOS sizes the panel from it while it swaps keyboards.
     private func applyHeight(_ height: CGFloat) {
+        if heightHeld {
+            heldHeight = height
+            return
+        }
         guard let heightConstraint else {
             let constraint = view.heightAnchor.constraint(equalToConstant: height)
             constraint.priority = UILayoutPriority(999)
@@ -338,10 +351,34 @@ final class KeyboardViewController: UIInputViewController {
             preferredContentSize.height = height
             return
         }
-        guard heightConstraint.constant != height else { return }
+        guard heightConstraint.constant != height || !heightConstraint.isActive else { return }
         UIView.performWithoutAnimation {
             heightConstraint.constant = height
+            heightConstraint.isActive = true
             preferredContentSize.height = height
+        }
+    }
+
+    /// MyKeyboard, test: hands iOS back its default height until the keyboard is on screen.
+    private func holdHeightForAppearance() {
+        guard FalaDebug.defersHeight else { return }
+        heightHeld = true
+        if let heightConstraint, heightConstraint.isActive {
+            heldHeight = heightConstraint.constant
+            heightConstraint.isActive = false
+        }
+    }
+
+    /// MyKeyboard, test: the keyboard is on screen; its own height goes in now.
+    private func releaseHeightAfterAppearance() {
+        guard heightHeld else { return }
+        DispatchQueue.main.async { [weak self] in
+            guard let self, self.heightHeld else { return }
+            self.heightHeld = false
+            let height = self.fullKeyboard?.preferredHeight ?? self.heldHeight
+            self.heldHeight = nil
+            if let height { self.applyHeight(height) }
+            self.fullKeyboard?.markFalaDiagnostics("grow")
         }
     }
 

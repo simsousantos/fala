@@ -102,6 +102,9 @@ final class FunctionDiscButton: UIButton {
 /// its place on screen, to look for a sign of the 17 pt iOS sometimes draws above it.
 enum FalaDebug {
     static let showsGeometry = true
+    /// MyKeyboard, test: open at iOS's default height and grow just after appearing
+    /// (`KeyboardViewController.holdHeightForAppearance`).
+    static let defersHeight = true
 }
 
 @MainActor
