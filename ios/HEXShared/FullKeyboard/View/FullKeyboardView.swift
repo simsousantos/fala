@@ -798,7 +798,7 @@ final class FullKeyboardView: UIView {
         accentCallout.frame = content
         stripView.frame = layout.stripFrame.offsetBy(dx: 0, dy: lift)
         selectionStrip.frame = stripView.frame
-        falaEmojiRow?.frame = stripView.frame
+        layoutFalaEmojiRow()
         stripView.slotFrames = layout.stripSlotFrames.map { $0.offsetBy(dx: -layout.stripFrame.minX, dy: -layout.stripFrame.minY) }
         stripView.pillInset = layout.metrics.stripInset
         stripView.textCenterY = layout.metrics.stripTextCenter

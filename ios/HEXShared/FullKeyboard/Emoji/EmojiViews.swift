@@ -179,7 +179,7 @@ final class EmojiRowView: UIView, UICollectionViewDataSource, UICollectionViewDe
     func setItems(_ items: [(emoji: String, name: String)]) {
         self.items = items
         collection.reloadData()
-        collection.setContentOffset(.zero, animated: false)
+        collection.setContentOffset(CGPoint(x: -collection.contentInset.left, y: 0), animated: false)
         refreshEmpty()
     }
 
@@ -193,8 +193,24 @@ final class EmojiRowView: UIView, UICollectionViewDataSource, UICollectionViewDe
         collection.reloadData()
     }
 
+    /// MyKeyboard: a fixed distance from one emoji to the next (the bar's row, as Function's:
+    /// 39 pt), instead of whole emoji fitted across the row.
+    var itemPitch: CGFloat? {
+        didSet { if itemPitch != oldValue { setNeedsLayout() } }
+    }
+    /// MyKeyboard: room at each end, behind a button over the row, where the emoji start and
+    /// scroll in from; the row fades out over `edgeFade` points there.
+    var edgeInsets: (leading: CGFloat, trailing: CGFloat) = (0, 0) {
+        didSet { setNeedsLayout() }
+    }
+    var edgeFade: CGFloat = 0 {
+        didSet { if edgeFade != oldValue { setNeedsLayout() } }
+    }
+    private var fadeMask: CAGradientLayer?
+
     /// The cell width that fits whole emoji across the row, about 42 pt.
     var cellWidth: CGFloat {
+        if let itemPitch { return itemPitch }
         let count = max(1, (bounds.width / 42).rounded(.down))
         return bounds.width / count
     }
@@ -203,6 +219,33 @@ final class EmojiRowView: UIView, UICollectionViewDataSource, UICollectionViewDe
         super.layoutSubviews()
         collection.frame = bounds
         emptyLabel.frame = bounds
+        let rtl = effectiveUserInterfaceLayoutDirection == .rightToLeft
+        let left = rtl ? edgeInsets.trailing : edgeInsets.leading
+        let right = rtl ? edgeInsets.leading : edgeInsets.trailing
+        if collection.contentInset.left != left || collection.contentInset.right != right {
+            collection.contentInset = UIEdgeInsets(top: 0, left: left, bottom: 0, right: right)
+            collection.setContentOffset(CGPoint(x: -left, y: 0), animated: false)
+        }
+        if edgeFade > 0, bounds.width > 0 {
+            let mask = fadeMask ?? CAGradientLayer()
+            fadeMask = mask
+            mask.startPoint = CGPoint(x: 0, y: 0.5)
+            mask.endPoint = CGPoint(x: 1, y: 0.5)
+            let w = bounds.width
+            let a = max(0, left - edgeFade) / w, b = left / w
+            let c = (w - right) / w, d = min(w, w - right + edgeFade) / w
+            mask.colors = [UIColor.clear.cgColor, UIColor.clear.cgColor, UIColor.black.cgColor,
+                           UIColor.black.cgColor, UIColor.clear.cgColor, UIColor.clear.cgColor]
+            mask.locations = [0, a, b, c, d, 1].map { NSNumber(value: Double($0)) }
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            mask.frame = bounds
+            CATransaction.commit()
+            layer.mask = mask
+        } else if fadeMask != nil {
+            layer.mask = nil
+            fadeMask = nil
+        }
         let size = CGSize(width: cellWidth, height: max(1, bounds.height - 8))
         if layout.itemSize != size {
             layout.itemSize = size

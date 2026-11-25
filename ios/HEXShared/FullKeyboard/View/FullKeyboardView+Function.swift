@@ -46,13 +46,50 @@ final class FunctionDiscButton: UIButton {
     }
 
     private func applyLook() {
-        // MyKeyboard: Function's proportions: the mark about 40% of the 36 pt disc, medium.
-        let config = UIImage.SymbolConfiguration(pointSize: symbolName == "bolt.fill" ? 14 : 15, weight: .medium)
-        let image = UIImage(systemName: symbolName, withConfiguration: config)?
-            .withTintColor(palette.textBase, renderingMode: .alwaysOriginal)
+        // MyKeyboard: Function's own bolt (wider and rounder than SF Symbols'), else a symbol
+        // about 40% of the 36 pt disc.
+        let config = UIImage.SymbolConfiguration(pointSize: 15, weight: .medium)
+        let image = symbolName == "bolt.fill"
+            ? Self.functionBolt(color: palette.textBase)
+            : UIImage(systemName: symbolName, withConfiguration: config)?
+                .withTintColor(palette.textBase, renderingMode: .alwaysOriginal)
         setImage(image, for: .normal)
         setImage(image, for: .highlighted)
         applyFill()
+    }
+
+    /// Function's ⚡, traced from its keyboard (3 px a point): 13.5 by 16 pt, wider and rounder
+    /// than SF Symbols' bolt, centred in the disc. Points in pt from the mark's centre; each
+    /// corner is rounded over 0.7 pt.
+    static let functionBoltPoints: [CGPoint] = [
+        CGPoint(x: -0.17, y: 7.94), CGPoint(x: -1.55, y: 7.2), CGPoint(x: -1.5, y: 2.65),
+        CGPoint(x: -6.76, y: 1.53), CGPoint(x: 0.5, y: -7.95), CGPoint(x: 1.56, y: -7.14),
+        CGPoint(x: 1.5, y: -2.58), CGPoint(x: 6.74, y: -1.47),
+    ]
+
+    static func functionBolt(color: UIColor) -> UIImage {
+        let size = CGSize(width: 15, height: 17)
+        let points = functionBoltPoints.map { CGPoint(x: size.width / 2 + $0.x, y: size.height / 2 + $0.y) }
+        func toward(_ a: CGPoint, _ b: CGPoint, _ d: CGFloat) -> CGPoint {
+            let length = hypot(b.x - a.x, b.y - a.y)
+            let t = min(d / max(length, 0.01), 0.45)
+            return CGPoint(x: a.x + (b.x - a.x) * t, y: a.y + (b.y - a.y) * t)
+        }
+        let path = UIBezierPath()
+        for i in points.indices {
+            let corner = points[i]
+            let previous = points[(i + points.count - 1) % points.count]
+            let next = points[(i + 1) % points.count]
+            let start = toward(corner, previous, 0.7)
+            let end = toward(corner, next, 0.7)
+            if i == 0 { path.move(to: start) } else { path.addLine(to: start) }
+            path.addQuadCurve(to: end, controlPoint: corner)
+        }
+        path.close()
+        return UIGraphicsImageRenderer(size: size).image { _ in
+            color.setFill()
+            path.fill()
+        }
     }
 
     private func applyFill() {

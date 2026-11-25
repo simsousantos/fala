@@ -56,15 +56,38 @@ extension FullKeyboardView {
         }
         falaEmojiToken = pick.token
         falaEmojiEntries = pick.entries
-        row.frame = stripView.frame
+        layoutFalaEmojiRow()
         row.isHidden = false
         bringSubviewToFront(row)
         return true
     }
 
+    /// Function's row: the bar's whole width, behind ⚡ and the Hex key, centred on their line;
+    /// the emoji start just past ⚡ and end just before the Hex key, one every 39 pt, and fade
+    /// out under the two discs as they scroll.
+    func layoutFalaEmojiRow() {
+        guard let row = falaEmojiRow else { return }
+        let layout = engine.layout
+        let lift = stripView.frame.minY - layout.stripFrame.minY
+        let bar = layout.stripBarFrame
+        guard let disc = layout.functionDiscFrame else {
+            row.frame = stripView.frame
+            row.edgeInsets = (0, 0)
+            row.edgeFade = 0
+            return
+        }
+        let height: CGFloat = 44
+        row.frame = CGRect(x: bar.minX, y: disc.midY + lift - height / 2, width: bar.width, height: height)
+        // ⚡ and the Hex key sit as far in from either end, so one inset serves both.
+        let inset = layout.hexOnLeading ? bar.maxX - disc.minX : disc.maxX - bar.minX
+        row.edgeInsets = (inset + 2, inset + 2)
+        row.edgeFade = 10
+    }
+
     private func makeFalaEmojiRow() -> EmojiRowView {
         let row = EmojiRowView()
-        row.fontSize = 24
+        row.fontSize = 25
+        row.itemPitch = 39
         row.palette = palette
         row.onPick = { [weak self] index in self?.pickFalaEmoji(at: index) }
         insertSubview(row, aboveSubview: stripView)
