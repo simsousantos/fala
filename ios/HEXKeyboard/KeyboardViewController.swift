@@ -158,6 +158,7 @@ final class KeyboardViewController: UIInputViewController {
         dictationEdits.finish(nil)
         mountSurface()
         fullKeyboard?.prepareForField()
+        fullKeyboard?.markFalaDiagnostics("will")
         isShown = true
         Self.onScreen.appeared(keyboardID, in: currentDocument)
         updateBackdrop()
@@ -175,6 +176,7 @@ final class KeyboardViewController: UIInputViewController {
         // could land after the next key. Apple's own keyboard has no such delay.
         view.window?.gestureRecognizers?.forEach { $0.delaysTouchesBegan = false }
         fullKeyboard?.keyboardDidAppear()
+        fullKeyboard?.markFalaDiagnostics("did")
         fullKeyboard?.offerModelNotice()
         // Onboarding's practice tells Hex's keyboard on screen from another one, or iOS's
         // dictation, by these.

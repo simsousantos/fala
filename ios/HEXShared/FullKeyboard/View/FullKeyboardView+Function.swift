@@ -101,7 +101,7 @@ final class FunctionDiscButton: UIButton {
 /// Fala, temporary: while true, an empty field's strip shows what the keyboard can measure of
 /// its place on screen, to look for a sign of the 17 pt iOS sometimes draws above it.
 enum FalaDebug {
-    static let showsGeometry = false
+    static let showsGeometry = true
 }
 
 @MainActor
@@ -128,8 +128,9 @@ extension FullKeyboardView {
 
     /// The geometry for the strip's status: only while debugging, and only in an empty field.
     var falaGeometryStatus: String? {
-        guard FalaDebug.showsGeometry, !engine.target.hasText else { return nil }
-        return falaGeometryText()
+        // MyKeyboard: the measurements now show over the keyboard (`+Diagnostics`), and the
+        // strip keeps its suggestions.
+        nil
     }
 
     /// Builds the discs once, from `init`, just above the Hex key (under the emoji panel and
@@ -204,13 +205,7 @@ extension FullKeyboardView {
             functionTranslateButton.frame = disc
             functionFormalButton.frame = disc.offsetBy(dx: layout.hexOnLeading ? -step : step, dy: 0)
         }
-        if FalaDebug.showsGeometry {
-            let geometry = falaGeometryText()
-            if geometry != Self.falaLastGeometry {
-                Self.falaLastGeometry = geometry
-                DispatchQueue.main.async { [weak self] in self?.refreshStrip() }
-            }
-        }
+        refreshFalaDiagnostics()
         updateFunctionBarVisibility()
     }
 

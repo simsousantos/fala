@@ -45,6 +45,11 @@ final class FullKeyboardView: UIView {
     // two shortcuts after a dictation, and what an action is doing or replaced.
     /// MyKeyboard: the ":" emoji row over the strip (`FullKeyboardView+EmojiRow`).
     var falaEmojiRow: EmojiRowView?
+    /// MyKeyboard, temporary: the measurements over the keyboard (`+Diagnostics`).
+    var falaDebugLabel: UILabel?
+    var falaDebugWindow = 0
+    var falaDebugStart: CFTimeInterval = 0
+    var falaDebugLines: [String] = []
     var falaEmojiToken: String?
     var falaEmojiEntries: [Int] = []
     let functionButton = FunctionDiscButton()
