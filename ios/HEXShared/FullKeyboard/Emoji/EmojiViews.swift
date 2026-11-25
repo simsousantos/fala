@@ -207,6 +207,14 @@ final class EmojiRowView: UIView, UICollectionViewDataSource, UICollectionViewDe
         didSet { if edgeFade != oldValue { setNeedsLayout() } }
     }
     private var fadeMask: CAGradientLayer?
+    /// MyKeyboard: the round buttons over the row's two ends, in this view's coordinates. The
+    /// row shows only between their centres and never inside either circle, so an emoji
+    /// scrolling toward one disappears at its rim, as if it went behind it, even when the
+    /// button itself is see-through.
+    var discCutouts: [CGRect] = [] {
+        didSet { if discCutouts != oldValue { setNeedsLayout() } }
+    }
+    private var discMask: CAShapeLayer?
 
     /// The cell width that fits whole emoji across the row, about 42 pt.
     var cellWidth: CGFloat {
@@ -226,7 +234,29 @@ final class EmojiRowView: UIView, UICollectionViewDataSource, UICollectionViewDe
             collection.contentInset = UIEdgeInsets(top: 0, left: left, bottom: 0, right: right)
             collection.setContentOffset(CGPoint(x: -left, y: 0), animated: false)
         }
-        if edgeFade > 0, bounds.width > 0 {
+        if discCutouts.count == 2, bounds.width > 0 {
+            let sorted = discCutouts.sorted { $0.midX < $1.midX }
+            let left = sorted[0], right = sorted[1]
+            // Between the two centres, less the half of each circle that reaches in.
+            let path = UIBezierPath(rect: CGRect(x: left.midX, y: 0, width: right.midX - left.midX, height: bounds.height))
+            let rim: CGFloat = 1
+            path.append(UIBezierPath(arcCenter: CGPoint(x: left.midX, y: left.midY), radius: left.width / 2 + rim,
+                                     startAngle: -.pi / 2, endAngle: .pi / 2, clockwise: true))
+            path.close()
+            path.append(UIBezierPath(arcCenter: CGPoint(x: right.midX, y: right.midY), radius: right.width / 2 + rim,
+                                     startAngle: .pi / 2, endAngle: 3 * .pi / 2, clockwise: true))
+            path.close()
+            let mask = discMask ?? CAShapeLayer()
+            discMask = mask
+            mask.fillRule = .evenOdd
+            CATransaction.begin()
+            CATransaction.setDisableActions(true)
+            mask.frame = bounds
+            mask.path = path.cgPath
+            CATransaction.commit()
+            layer.mask = mask
+            fadeMask = nil
+        } else if edgeFade > 0, bounds.width > 0 {
             let mask = fadeMask ?? CAGradientLayer()
             fadeMask = mask
             mask.startPoint = CGPoint(x: 0, y: 0.5)
@@ -242,9 +272,10 @@ final class EmojiRowView: UIView, UICollectionViewDataSource, UICollectionViewDe
             mask.frame = bounds
             CATransaction.commit()
             layer.mask = mask
-        } else if fadeMask != nil {
+        } else if fadeMask != nil || discMask != nil {
             layer.mask = nil
             fadeMask = nil
+            discMask = nil
         }
         let size = CGSize(width: cellWidth, height: max(1, bounds.height - 8))
         if layout.itemSize != size {

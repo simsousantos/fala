@@ -73,7 +73,7 @@ extension FullKeyboardView {
         guard let disc = layout.functionDiscFrame else {
             row.frame = stripView.frame
             row.edgeInsets = (0, 0)
-            row.edgeFade = 0
+            row.discCutouts = []
             return
         }
         let height: CGFloat = 44
@@ -81,7 +81,10 @@ extension FullKeyboardView {
         // ⚡ and the Hex key sit as far in from either end, so one inset serves both.
         let inset = layout.hexOnLeading ? bar.maxX - disc.minX : disc.maxX - bar.minX
         row.edgeInsets = (inset + 2, inset + 2)
-        row.edgeFade = 10
+        // The emoji vanish at each disc's rim, behind it: a round mask, the discs' own circles.
+        let local = disc.offsetBy(dx: -bar.minX, dy: height / 2 - disc.midY)
+        let mirrored = CGRect(x: bar.width - local.maxX, y: local.minY, width: local.width, height: local.height)
+        row.discCutouts = [local, mirrored]
     }
 
     private func makeFalaEmojiRow() -> EmojiRowView {
